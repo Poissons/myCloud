@@ -5,12 +5,14 @@ import random
 import re
 import socket
 import csv
+import time
+
 import numpy as np
 import torch as t
 from torch import nn
 from torch.autograd import Variable
 from .models import SimpleNet
-from multiprocessing import Manager
+from multiprocessing import Manager, Pool
 
 from kubernetes import client, config
 
@@ -41,47 +43,15 @@ EDGE_MASTER_RECEIVE_UPDATE = 9008
 """
 各种常量
 """
-# NAME = ['imagerecon', 'ocr']
-# DATA = ['./cloud/datasets/object.jpg', './cloud/datasets/ocr.jpg']
-# PATH = ['./cloud/app/object/service.yaml', './cloud/app/ocr/service.yaml']
-# PORT = ['2400', '2500']
-# DOCKER = ['registry.cn-hangzhou.aliyuncs.com/k3s_ssh/object', 'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/ocr']
 
-NAME = ['imagerecon', 'ocr', 'extractinfo', 'facerecognition', 'speechtotext', 'fasttext',
-        'textgenrnn', 'simplehtr', 'facemaskdetection', 'extracttable', 'verifycode', 'imageai']
-
-PATH = ['./cloud/app/object/service.yaml', './cloud/app/ocr/service.yaml', './cloud/app/extract-info/service.yaml',
-        './cloud/app/face-recognition/service.yaml',
-        './cloud/app/speech-to-text/service.yaml', './cloud/app/fast-text/service.yaml',
-        './cloud/app/textgenrnn/service.yaml', './cloud/app/SimpleHTR/service.yaml',
-        './cloud/app/FaceMaskDetection/service.yaml', './cloud/app/extract-table/service.yaml',
-        './cloud/app/easy12306/service.yaml',
-        './cloud/app/imageAI/service.yaml']
-
-DOCKER = ['registry.cn-hangzhou.aliyuncs.com/k3s_ssh/object', 'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/ocr',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/extract-info',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/face-recognition',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/speech-to-text',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/fast-text',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/text-genrnn',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/simple-htr',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/facemask-detection',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/extract-table',
-          'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/verify-code', 'registry.cn-hangzhou.aliyuncs.com/k3s_ssh/imageai']
-
-PORT = ['2400', '2500', '2600', '2700', '2900', '3000',
-        '3100', '3200', '3300', '3400', '3500', '3600']
+PORT = ['3001', '3002', '3003', '3004', '3005', '3006', '3007', '3008', '3009', '3010', '3011', '3012', '3013', '3014',
+        '3015', '3016', '3017', '3018', '3019', '3020']
 
 K3S_CONFIG = ["./cloud/config1.yaml"]
 
 ALG_PORT = ['4001', '4002']
-ALG_NAME = ['service-greedy', 'service-dqn', ]
+ALG_NAME = ['service-greedy', 'service-dqn']
 ALG_PATH = ['./app/service-greedy/service.yaml', './app/service-dqn/service.yaml']
-
-# 每个服务的所占内存,现在为1Gi
-STANDARD_MEMORY = 1048576
-# 每个服务的所占ephemeral-storage,现在为2Gi
-STANDARD_EPHEMERAL_STORAGE = 2097152
 
 """
 各种变量
@@ -116,12 +86,6 @@ state = {
 # 输入：Socket，请求处理结果
 # 输出：无
 # 作用：将处理结果发送给终端
-def send_task(client, result):
-    result = pickle.dumps(result)
-    client.send(len(result).to_bytes(length=6, byteorder='big'))
-    client.send(result)
-
-
 def send_task_json(client, result):
     result = json.dumps(result)
     client.sendall(bytes(result.encode('utf-8')))
@@ -143,173 +107,54 @@ def offload(pod_list):
 # 输入：请求
 # 输出：请求处理结果
 # 作用：处理请求
-def run_req(req):
-    pod_list = check_pod(NAME[req[0]])
+
+def run_once(command):
+    return os.popen(command).read()
+
+def run(command, keyword):
+    result = run_once(command)
+    if keyword is not None:
+        initial_time = 0
+        while result.find(keyword) == -1 and initial_time < 10:
+            result = run_once(command)
+            initial_time += 1
+    return result
+
+
+def run_req(master_name, req, trans_from_center_to_cloud):
+    execute_start_time = time.time()
+    pod_list = check_pod('service' + str([req[0]]))
     pod_index = offload(pod_list)
     current_pod = pod_list[pod_index]
-    try:
-        os.makedirs('./cloud/datasets/' + NAME[req[0]])
-    except:
-        pass
-    if req[0] == 2 or req[0] == 5:
-        with open('./cloud/datasets/' + NAME[req[0]] + '/test.txt', 'wb') as f:
-            f.write(req[3])
-            f.close()
-    elif req[0] == 4:
-        with open('./cloud/datasets/' + NAME[req[0]] + '/test.flac', 'wb') as f:
-            f.write(req[3])
-            f.close()
-    elif req[0] == 6:
-        with open('./cloud/datasets/' + NAME[req[0]] + '/test.json', 'wb') as f:
-            f.write(req[3])
-            f.close()
-    elif req[0] == 9:
-        with open('./cloud/datasets/' + NAME[req[0]] + '/test.pdf', 'wb') as f:
-            f.write(req[3])
-            f.close()
-    else:
-        with open('./cloud/datasets/' + NAME[req[0]] + '/test.jpg', 'wb') as f:
-            f.write(req[3])
-            f.close()
-    # req[3] = req[3].convert('RGB')
-    # req[3].save(DATA[req[0]])
     while current_pod.status != 'Running':
-        pod_list = check_pod(NAME[req[0]])
+        pod_list = check_pod('service' + str([req[0]]))
         current_pod = pod_list[pod_index]
-    print('服务镜像部署完成，开始任务执行.')
+    print('开始任务执行.')
+    val1=run(f'curl {current_pod.ip}/predict -X POST -d observation={req[0]}','Time:')
 
-    # 不知道路径对不对
-    # curl -X POST -F image=@dog.jpg 'http://localhost:2400/predict'
-    if req[0] == 0:
-        val1 = os.popen(
-            'curl -X POST -F image=@./cloud/datasets/' + NAME[0] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                0] + '/predict\'').read()
-        while val1.find('predictions') == -1:
-            val1 = os.popen(
-                'curl -X POST -F image=@./cloud/datasets/' + NAME[
-                    0] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-                PORT[0] + '/predict\'').read()
+    mission = {'success': 1, 'failure': 0, 'stuck': -1}
+    detail_mission = {'name': master_name, 'type': req[0], 'success': 0, 'failure': 0}
 
-    # curl -X POST -F image=@eng.png 'http://localhost:2500/predict'
-    elif req[0] == 1:
-        val1 = os.popen(
-            'curl -X POST -F image=@./cloud/datasets/' + NAME[1] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                1] + '/predict\'').read()
-        while val1.find('predictions') == -1:
-            val1 = os.popen(
-                'curl -X POST -F image=@./cloud/datasets/' + NAME[
-                    1] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-                PORT[1] + '/predict\'').read()
-
-    # curl -X POST -F text=@test.txt 'http://127.0.0.1:2600/extract
-    elif req[0] == 2:
-        val1 = os.popen(
-            'curl -X POST -F text=@./cloud/datasets/' + NAME[2] + '/test.txt' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                2] + '/extract\'').read()
-        while val1.find('results') == -1:
-            val1 = os.popen(
-                'curl -X POST -F text=@./cloud/datasets/' + NAME[
-                    2] + '/test.txt' + ' \'http://' + current_pod.ip + ':' +
-                PORT[2] + '/extract\'').read()
-
-    # curl -X POST -F file=@test1.jpg 'http://localhost:2700/face-recognition'
-    elif req[0] == 3:
-        val1 = os.popen(
-            'curl -X POST -F file=@./cloud/datasets/' + NAME[3] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                3] + '/face-recognition\'').read()
-
-    # curl -X POST -F audio=@asset/data/LibriSpeech/test-clean/1089/134686/1089-134686-0000.flac
-    # 'http://localhost:2900/speechtotext'
-    elif req[0] == 4:
-        val1 = os.popen(
-            'curl -X POST -F audio=@./cloud/datasets/' + NAME[4] + '/test.flac' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                4] + '/speechtotext\'').read()
-        while val1.find('result') == -1:
-            val1 = os.popen(
-                'curl -X POST -F audio=@./cloud/datasets/' + NAME[
-                    4] + '/test.flac' + ' \'http://' + current_pod.ip + ':' +
-                PORT[4] + '/speechtotext\'').read()
-
-    # curl -X POST -F text=@test.txt 'http://127.0.0.1:3000/textClassification
-    elif req[0] == 5:
-        val1 = os.popen(
-            'curl -X POST -F text=@./cloud/datasets/' + NAME[5] + '/test.txt' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                5] + '/textClassification\'').read()
-        while val1.find('results') == -1:
-            val1 = os.popen(
-                'curl -X POST -F text=@./cloud/datasets/' + NAME[
-                    5] + '/test.txt' + ' \'http://' + current_pod.ip + ':' +
-                PORT[5] + '/textClassification\'').read()
-
-    # curl -d '{"weight": "politics"}' -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:3100/textGen'
-    # curl -d '{"weight": "relationship"}' -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:3100/textGen'
-    # curl -d '{"weight": "hacknews/cellponeOS"}' -H 'Content-Type: application/json'
-    # -X POST 'http://127.0.0.1:3100/textGen'
-    elif req[0] == 6:
-        data = json.loads(req[3])
-        val1 = os.popen(
-            'curl -d \'' + str(
-                data) + '\' -H \'Content-Type: application/json\' -X POST' + ' \'http://' + current_pod.ip +
-            ':' + PORT[6] + '/textGen\'').read()
-
-    # curl -X POST -F image =@test.png 'http://localhost:3200/simplehtr'
-    elif req[0] == 7:
-        val1 = os.popen(
-            'curl -X POST -F image=@./cloud/datasets/' + NAME[7] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                7] + '/simplehtr\'').read()
-        while val1.find('results') == -1:
-            val1 = os.popen(
-                'curl -X POST -F image=@./cloud/datasets/' + NAME[
-                    7] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-                PORT[7] + '/simplehtr\'').read()
-
-    # curl -X POST -F image=@img/test.jpg 'http://localhost:3300/facemask-detection/image'
-    elif req[0] == 8:
-        val1 = os.popen(
-            'curl -X POST -F image=@./cloud/datasets/' + NAME[8] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                8] + '/facemask-detection/image\'').read()
-        while val1.find('results') == -1:
-            val1 = os.popen(
-                'curl -X POST -F image=@./cloud/datasets/' + NAME[
-                    8] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-                PORT[8] + '/facemask-detection/image\'').read()
-
-    # curl -X POST -F file=@foo.pdf 'http://127.0.0.1:3400/extract'
-    elif req[0] == 9:
-        val1 = os.popen(
-            'curl -X POST -F file=@./cloud/datasets/' + NAME[9] + '/test.pdf' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                9] + '/extract\'').read()
-
-    # curl -X POST -F image=@test1.jpg 'http://localhost:3500/predict'
-    elif req[0] == 10:
-        val1 = os.popen(
-            'curl -X POST -F image=@./cloud/datasets/' + NAME[10] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                10] + '/predict\'').read()
-        while val1.find('predictions') == -1:
-            val1 = os.popen(
-                'curl -X POST -F image=@./cloud/datasets/' + NAME[
-                    10] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-                PORT[10] + '/predict\'').read()
-
-    # curl -X POST -F image=@image2.jpg 'http://localhost:3600/predict' -o imageNew.jpg
-    # curl -X POST -F image=@./cloud/datasets/imageai/test.jpg 'http://10.244.3.6:3600/predict' -o imageNew.jpg
-    elif req[0] == 11:
-        val1 = os.popen(
-            'curl -X POST -F image=@./cloud/datasets/' + NAME[11] + '/test.jpg' + ' \'http://' + current_pod.ip + ':' +
-            PORT[
-                11] + '/predict\' -o imageNew.jpg').read()
+    execute_total_time = time.time() - execute_start_time + 2 * trans_from_center_to_cloud
+    if execute_total_time <= req[3]:
+        mission['success'] += 1
+        detail_mission['success'] += 1
     else:
-        raise Exception('undefined request type')
+        mission['failure'] += 1
+        detail_mission['failure'] += 1
+
+    ##############自己给自己发是这样写的吗？##################
+    print(mission)
+    print(detail_mission)
+    client1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client1.connect((CLOUD_IP, CLOUD_MASTER_COLLECT_TASKS_SITUATION_PORT))
+    send_task_json(client1, mission)
+    client1.close()
+    client2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client2.connect((CLOUD_IP, TASKS_EXECUTE_SITUATION_ON_EACH_NODE_PORT))
+    send_task_json(client2, detail_mission)
+    client2.close()
+
     result = val1
     return result
 
@@ -317,40 +162,27 @@ def run_req(req):
 # 输入：Socket
 # 输出：请求处理结果
 # 作用：通过Socket接收处理结果
+#######################是加在这里的吗？
 def receive_request_from_edge(server):
-    while True:
-        conn, addr = server.accept()
-        length_data = conn.recv(6)
-        length = int.from_bytes(length_data, byteorder='big')
-        b = bytes()
-        if length == 0:
-            break
-        count = 0
+    with Pool(processes=10) as pool:
         while True:
-            value = conn.recv(length)
-            b = b + value
-            count += len(value)
-            if count >= length:
-                break
-        req = pickle.loads(b)
-        print('已接受到' + str(req[0]) + '号服务请求，开始执行.')
+            conn, addr = server.accept()
+            req_bytes = conn.recv(2048)
+            req = json.loads(req_bytes.decode('utf-8'))
+            master_name = req[0]
+            req = req[1]
+            print('已接受到' + str(req[0]) + '号服务请求，开始执行.')
 
-        result = run_req(req)
-        print('kind: ', req[0])
-        send_task(conn, result)
-
-
-# 输入：无
-# 输出：无
-# 作用：初始化相关Docker
-def init_docker():
-    for i in range(len(NAME)):
-        val = os.popen(
-            'docker run --name ' + NAME[i] + ' -d -p ' + PORT[i] + ':' + PORT[i] + ' ' + DOCKER[i] + ':latest').read()
+            arrive_from_center_to_cloud = time.time()
+            ###########################要改时间???????????????????????
+            trans_from_center_to_cloud = arrive_from_center_to_cloud - req[1]
+            # 此处直接使用贪心即可
+            result = pool.apply_async(run_req(master_name, req, trans_from_center_to_cloud))
+            print('kind: ', req[0])
+            send_task_json(conn, result)
 
 
 def execute():
-    # init_docker()
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setblocking(1)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -371,7 +203,7 @@ def collect_data(managerState, mdata_lock):
 
     while True:
         c, addr = s.accept()
-        this_mission = c.recv(1024)
+        this_mission = c.recv(2048)
         mission = json.loads(this_mission.decode('utf-8'))
         print(mission)
         state['success'] += mission['success']
@@ -427,7 +259,7 @@ def update_pod_cloud(manager_tasks_execute_situation_on_each_node_dict, manager_
     epoch_index = 0
     while True:
         c, addr = server.accept()
-        pre = c.recv(1024)
+        pre = c.recv(2048)
         pre = json.loads(pre.decode('utf-8'))
         this_master_name = pre[0]
         update_interval = pre[1]
@@ -482,7 +314,7 @@ def collect_tasks_execute_situation_on_each_node(manager_tasks_execute_situation
     with Manager() as manager:
         while True:
             c, addr = server.accept()
-            this_mission = c.recv(1024)
+            this_mission = c.recv(2048)
             mission = json.loads(this_mission.decode('utf-8'))
             c.close()
             name = mission['name']
@@ -528,20 +360,9 @@ def current_service_on_each_node(manager_current_service_on_each_node_dict, shar
     with Manager() as manager:
         while True:
             conn, addr = server.accept()
-            length_data = conn.recv(6)
-            length = int.from_bytes(length_data, byteorder='big')
-            b = bytes()
-            if length == 0:
-                break
-            count = 0
-            while True:
-                value = conn.recv(length)
-                b = b + value
-                count += len(value)
-                if count >= length:
-                    break
             # 格式[master_name, [pod.__dict__ for pod in update_info], 0]
-            current_service = pickle.loads(b)
+            current_service_bytes = conn.recv(2048)
+            current_service = json.loads(current_service_bytes.decode('utf-8'))
             current_service[1] = [make_pod(pod_dict)
                                   for pod_dict in current_service[1]]
             master_name = current_service[0]
@@ -564,7 +385,8 @@ def current_service_on_each_node(manager_current_service_on_each_node_dict, shar
                         continue
                     else:
                         service_name = service_name.group(1)
-                    type = NAME.index(service_name)
+                    type = re.findall(r'\d+\.?\d*', service_name)
+
                     # inner_dict = manager.dict()
                     # inner_dict[type] = 0
                     if type in tmp2_dict:
@@ -588,7 +410,7 @@ def stuck_tasks_situation_on_each_node(manager_stuck_tasks_situation_on_each_nod
     with Manager() as manager:
         while True:
             c, addr = server.accept()
-            this_mission = c.recv(1024)
+            this_mission = c.recv(2048)
             detail_mission = json.loads(this_mission.decode('utf-8'))
             c.close()
             name = detail_mission['name']
@@ -664,28 +486,28 @@ def make_pod(pod_dict):
 # 输出：新的pod部署关系
 # 作用：重新编排部署pod
 
-def execute_update(update_info):
-    config.kube_config.load_kube_config(config_file=K3S_CONFIG[update_info[2]])
-    # 获取API的CoreV1Api版本对象
-    v1 = client.CoreV1Api()
-    ready_nodes = []
-    for n in v1.list_node().items:
-        for status in n.status.conditions:
-            if status.status == True and status.type == "Ready":
-                ready_nodes.append(n.metadata.name)
-    print('ready_nodes:', ready_nodes)
-    pod_update_result = []
-    for i in update_info[0]:
-        for j in range(len(NAME)):
-            if str(i.name.split('-')[0]).strip() == str(NAME[j]).strip():
-                print('\n待部署:', i.node, '-', NAME[j])
-                print('delete: ', i.name.strip())
-                resp = v1.delete_namespaced_pod(
-                    namespace="default", name=i.name.strip())
-                new_node = random.choice(ready_nodes)
-                print('重新部署为:', new_node, '-', NAME[j], '\n')
-                pod_update_result.append([j, new_node])
-    return pod_update_result
+# def execute_update(update_info):
+#     config.kube_config.load_kube_config(config_file=K3S_CONFIG[update_info[2]])
+#     # 获取API的CoreV1Api版本对象
+#     v1 = client.CoreV1Api()
+#     ready_nodes = []
+#     for n in v1.list_node().items:
+#         for status in n.status.conditions:
+#             if status.status == True and status.type == "Ready":
+#                 ready_nodes.append(n.metadata.name)
+#     print('ready_nodes:', ready_nodes)
+#     pod_update_result = []
+#     for i in update_info[0]:
+#         for j in range(20):
+#             if str(i.name.split('-')[0]).strip() == str(NAME[j]).strip():
+#                 print('\n待部署:', i.node, '-', NAME[j])
+#                 print('delete: ', i.name.strip())
+#                 resp = v1.delete_namespaced_pod(
+#                     namespace="default", name=i.name.strip())
+#                 new_node = random.choice(ready_nodes)
+#                 print('重新部署为:', new_node, '-', NAME[j], '\n')
+#                 pod_update_result.append([j, new_node])
+#     return pod_update_result
 
 
 def placement_chosen(master_name, update_interval, tasks_execute_situation_on_each_node_dict,
@@ -777,8 +599,8 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     [-MAX_KIND，MAX_KIND]
     """
     result = []
-    failure_box = [-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2]
-    success_box = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+    failure_box = [-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2]
+    success_box = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 
     # 选第一个参数
     print(tasks_execute_situation_on_each_node_dict)
@@ -789,8 +611,8 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         print(value)
         failure_percent = value['failure'] / \
                           (value['success'] + value['failure'])
-        failure_box[type] = failure_percent
-        success_box[type] = 1 - failure_percent
+        failure_box[type - 1] = failure_percent
+        success_box[type - 1] = 1 - failure_percent
 
     print('失败率：')
     print(failure_box)
@@ -802,12 +624,17 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     # {'node1': {'memory': '12193908Ki', 'ephemeral-storage': '18903225108'}
     for node in second_dict:
         resources = second_dict[node]
+        cpu = resources['cpu']
+        cpu_percent = cpu['percent']
+        cpu_number = cpu['number']
         memory = resources['memory']
-        ephemeral_storage = resources['ephemeral-storage']
-        memory = float(re.match(r'^(.*?)Ki', memory).group(1))
-        ephemeral_storage = int(re.match(r'^(.*?)Ki', ephemeral_storage).group(1))
+        memory_percent = memory['percent']
+        memory_number = memory['number']
+        ephemeral_storage = resources['storage']
+        ephemeral_storage_percent = ephemeral_storage['percent']
+        ephemeral_storage_number = ephemeral_storage['number']
         # 留个allocatable的4%
-        if memory > STANDARD_MEMORY + 652907:
+        if int(memory_percent) <= 90:
             if_delete = False
 
     if if_delete:
@@ -820,15 +647,15 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
                 current_service.append(type)
 
         for i in current_service:
-            if failure_box[i] == -2:
-                first_param = i
+            if failure_box[i - 1] == -2:
+                first_param = i - 1
                 break
 
         if first_param is None:
             l_failure = 1
             for i in current_service:
-                if failure_box[i] < l_failure:
-                    first_param = i
+                if failure_box[i - 1] < l_failure:
+                    first_param = i - 1
         # 传过来的是0-11，现在要换成1-12传回去
         first_param += 1
         first_param *= -1
@@ -842,7 +669,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     for i in range(len(failure_box)):
         if failure_box[i] > max_failure:
             max_failure = failure_box[i]
-            second_param = i
+            second_param = i+1
 
     min_success = 2
     # 如果最大失败率为0，说明没有失败的，那么选出成功率最小的那个
@@ -850,7 +677,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         for i in range(len(success_box)):
             if success_box[i] < min_success:
                 min_success = success_box[i]
-                second_param = i
+                second_param = i+1
 
     # 如果最大失败率为 - 2，说明本段时间里根本没有成功/失败的任务。那么哪个积压的多选哪个
     elif max_failure == -2:
@@ -864,7 +691,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
                 max_stuck = num
                 second_param = type
 
-    success = np.zeros(12).astype(int)
+    success = np.zeros(20).astype(int)
     for key, the_dict in first_dict.items():
         success[key] = the_dict['success']
 
@@ -876,8 +703,6 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
             csv_write.writerow([epoch_index, reward / update_interval])  # 记得要改
             f2.close()
 
-    # 传过来的是0-11，现在要换成1-12传回去
-    second_param += 1
     result.append(master_name)
     result.append(first_param)
     result.append(second_param)
@@ -941,9 +766,9 @@ class DQNAgent:
         x = Variable(x)
         if np.random.rand() <= self.epsilon:
             if x[:, -1].item() == 0:
-                return random.randrange(12)
+                return random.randrange(20)
             else:
-                return random.randrange(12, self.action_size)
+                return random.randrange(20, self.action_size)
         act_values = self.eval_model.forward(x)
         return t.max(act_values, 1)[1].data.numpy()[0]
 
@@ -1037,17 +862,17 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     :param
     Dict::   边缘master名字->边缘worker的名字->memory
     resources_on_each_node: 各节点内存使用情况
-    {'master':{'node1':{'memory':'13176956Ki','storage':'13163656Ki'},'node2':{'memory':'13176956Ki','storage':'13163656Ki'}}}
+    {'master':{'node1':{'memory':{'percent':'13','number':'2098Mi'},'storage':{'percent':'3','number':'4Gi'},'cpu':{'percent':'2','number':'100m'}},'node2':{'memory':{'percent':'13','number':'2098Mi'},'storage':{'percent':'3','number':'4Gi'},'cpu':{'percent':'2','number':'100m'}}}
     :return:
     1.待编排的节点：选2个所有边缘集群的node。
     2.对节点的操作：选出是增加还是删除某个类型的服务
     [-MAX_KIND，MAX_KIND]
     [-MAX_KIND，MAX_KIND]
     """
-    success = np.zeros(12).astype(int)
-    failure = np.zeros(12).astype(int)
-    stuck = np.zeros(12).astype(int)
-    service = np.zeros(12).astype(int)
+    success = np.zeros(20).astype(int)
+    failure = np.zeros(20).astype(int)
+    stuck = np.zeros(20).astype(int)
+    service = np.zeros(20).astype(int)
     if_delete = np.array([1])
 
     param1 = tasks_execute_situation_on_each_node_dict[master_name]
@@ -1056,15 +881,15 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     param4 = resources_on_each_node_dict[master_name]
 
     for key, the_dict in param1.items():
-        success[key] = the_dict['success']
-        failure[key] = the_dict['failure']
+        success[key-1] = the_dict['success']
+        failure[key-1] = the_dict['failure']
 
     for key1, value1 in param2.items():
         for key2, value2 in value1.items():
-            service[key2] += value2
+            service[key2-1] += value2
 
     for key, the_dict in param3.items():
-        stuck[key] = the_dict['stuck']
+        stuck[key-1] = the_dict['stuck']
 
     for key, the_dict in param4.items():
         memory = float(re.match(r'^(.*?)Ki', the_dict['memory']).group(1))
@@ -1090,9 +915,9 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     current_state = t.FloatTensor(current_state).view(1, -1)
 
     # some constants
-    STATE_SIZE = 49
-    ADD_ACTION = 12
-    DELETE_ACTION = 13
+    STATE_SIZE = 81
+    ADD_ACTION = 20
+    DELETE_ACTION = 21
     EPOCH_NUM = 30000
     ACTION_SIZE = DELETE_ACTION * ADD_ACTION
     REPLAY_MEMORY_SIZE = 5000
@@ -1135,16 +960,22 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     next_delete, next_add = obtain_actual_action(CONTROL_ACTION_MAP, control_action)
 
     # get the reward，tensor形式
-    the_success = current_state[:, :12]
+    the_success = current_state[:, :20]
     reward = calc_reward(the_success)
 
     if_delete = np.array([1])
     if next_delete == 0:
         for key, the_dict in param4.items():
-            memory = float(re.match(r'^(.*?)Ki', the_dict['memory']).group(1))
-            print('如果不减的话，memory是：')
-            print(memory - STANDARD_MEMORY)
-            if memory - STANDARD_MEMORY > 2 * STANDARD_MEMORY + 652907:
+            cpu = the_dict['cpu']
+            cpu_percent = cpu['percent']
+            cpu_number = cpu['number']
+            memory = the_dict['memory']
+            memory_percent = memory['percent']
+            memory_number = memory['number']
+            ephemeral_storage = the_dict['storage']
+            ephemeral_storage_percent = ephemeral_storage['percent']
+            ephemeral_storage_number = ephemeral_storage['number']
+            if int(memory_percent)+6 <= 90:
                 if_delete = np.array([0])
                 break
 
