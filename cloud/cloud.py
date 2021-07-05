@@ -892,10 +892,16 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
         stuck[key-1] = the_dict['stuck']
 
     for key, the_dict in param4.items():
-        memory = float(re.match(r'^(.*?)Ki', the_dict['memory']).group(1))
-        print('收到的memory是：')
-        print(memory)
-        if memory > 2 * STANDARD_MEMORY + 652907:
+        cpu = the_dict['cpu']
+        cpu_percent = cpu['percent']
+        cpu_number = cpu['number']
+        memory = the_dict['memory']
+        memory_percent = memory['percent']
+        memory_number = memory['number']
+        ephemeral_storage = the_dict['storage']
+        ephemeral_storage_percent = ephemeral_storage['percent']
+        ephemeral_storage_number = ephemeral_storage['number']
+        if int(memory_percent) + 6 <= 90:
             if_delete = np.array([0])
             break
 
