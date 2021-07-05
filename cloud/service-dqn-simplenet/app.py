@@ -125,9 +125,9 @@ class DQNAgent:
         x = Variable(x)
         if np.random.rand() <= self.epsilon:
             if x[:, -1].item() == 0:
-                return random.randrange(12)
+                return random.randrange(20)
             else:
-                return random.randrange(12, self.action_size)
+                return random.randrange(20, self.action_size)
         act_values = self.eval_model.forward(x)
         return t.max(act_values, 1)[1].data.numpy()[0]
 
@@ -202,8 +202,6 @@ def calc_reward(success_t):
 def q_learning_placement(master_name, update_interval, tasks_execute_situation_on_each_node_dict,
                          current_service_on_each_node_dict,
                          stuck_tasks_situation_on_each_node_dict, resources_on_each_node_dict, epoch_index):
-    # 每个服务的所占内存,现在为1Gi
-    STANDARD_MEMORY = 1048576
     """
     强化学习
     分析：
@@ -223,17 +221,17 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     :param
     Dict::   边缘master名字->边缘worker的名字->memory
     resources_on_each_node: 各节点内存使用情况
-    {'master':{'node1':{'memory':'13176956Ki','storage':'13163656Ki'},'node2':{'memory':'13176956Ki','storage':'13163656Ki'}}}
+    {'master':{'node1':{'memory':{'percent':'13','number':'2098Mi'},'storage':{'percent':'3','number':'4Gi'},'cpu':{'percent':'2','number':'100m'}},'node2':{'memory':{'percent':'13','number':'2098Mi'},'storage':{'percent':'3','number':'4Gi'},'cpu':{'percent':'2','number':'100m'}}}
     :return:
     1.待编排的节点：选2个所有边缘集群的node。
     2.对节点的操作：选出是增加还是删除某个类型的服务
     [-MAX_KIND，MAX_KIND]
     [-MAX_KIND，MAX_KIND]
     """
-    success = np.zeros(12).astype(int)
-    failure = np.zeros(12).astype(int)
-    stuck = np.zeros(12).astype(int)
-    service = np.zeros(12).astype(int)
+    success = np.zeros(20).astype(int)
+    failure = np.zeros(20).astype(int)
+    stuck = np.zeros(20).astype(int)
+    service = np.zeros(20).astype(int)
     if_delete = np.array([1])
 
     param1 = tasks_execute_situation_on_each_node_dict[master_name]
@@ -242,19 +240,27 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     param4 = resources_on_each_node_dict[master_name]
 
     for key, the_dict in param1.items():
-        success[int(key)] = the_dict['success']
-        failure[int(key)] = the_dict['failure']
+        success[int(key)-1] = the_dict['success']
+        failure[int(key)-1] = the_dict['failure']
 
     for key1, value1 in param2.items():
         for key2, value2 in value1.items():
-            service[int(key2)] += value2
+            service[int(key2)-1] += value2
 
     for key, the_dict in param3.items():
-        stuck[int(key)] = the_dict['stuck']
+        stuck[int(key)-1] = the_dict['stuck']
 
     for key, the_dict in param4.items():
-        memory = float(re.match(r'^(.*?)Ki', the_dict['memory']).group(1))
-        if memory > 2 * STANDARD_MEMORY + 652907:
+        cpu = the_dict['cpu']
+        cpu_percent = cpu['percent']
+        cpu_number = cpu['number']
+        memory = the_dict['memory']
+        memory_percent = memory['percent']
+        memory_number = memory['number']
+        ephemeral_storage = the_dict['storage']
+        ephemeral_storage_percent = ephemeral_storage['percent']
+        ephemeral_storage_number = ephemeral_storage['number']
+        if int(memory_percent) + 6 <= 90:
             if_delete = np.array([0])
             break
 
@@ -263,9 +269,9 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     current_state = t.FloatTensor(current_state).view(1, -1)
 
     # some constants
-    STATE_SIZE = 49
-    ADD_ACTION = 12
-    DELETE_ACTION = 13
+    STATE_SIZE = 81
+    ADD_ACTION = 20
+    DELETE_ACTION = 21
     EPOCH_NUM = 30000
     ACTION_SIZE = DELETE_ACTION * ADD_ACTION
     REPLAY_MEMORY_SIZE = 5000
@@ -309,14 +315,22 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     next_delete, next_add = obtain_actual_action(CONTROL_ACTION_MAP, control_action)
 
     # get the reward，tensor形式
-    the_success = current_state[:, :12]
+    the_success = current_state[:, :20]
     reward = calc_reward(the_success)
 
     if_delete = np.array([1])
     if next_delete == 0:
         for key, the_dict in param4.items():
-            memory = float(re.match(r'^(.*?)Ki', the_dict['memory']).group(1))
-            if memory - STANDARD_MEMORY > 2 * STANDARD_MEMORY + 652907:
+            cpu = the_dict['cpu']
+            cpu_percent = cpu['percent']
+            cpu_number = cpu['number']
+            memory = the_dict['memory']
+            memory_percent = memory['percent']
+            memory_number = memory['number']
+            ephemeral_storage = the_dict['storage']
+            ephemeral_storage_percent = ephemeral_storage['percent']
+            ephemeral_storage_number = ephemeral_storage['number']
+            if int(memory_percent)+6 <= 90:
                 if_delete = np.array([0])
                 break
 
