@@ -3,7 +3,7 @@
 # 	python app.py
 # Submit a request via cURL:
 
-# curl http://localhost:4001/predict -X POST -d 'observation=["master", 3, {"master": {"4": {"success": 1, "failure": 0}, "11": {"success": 0, "failure": 1}, "8": {"success": 1, "failure": 0}}}, {"master": {"node1": {"4": 2, "11": 1}, "node2": {"8": 2}}}, {"master": {"4": {"stuck": 1}, "11": {"stuck": 1}, "8": {"stuck": 1}, "6": {"stuck": 1}, "2": {"stuck": 1}, "1": {"stuck": 2}}}, {"master": {"node1": {"memory": "13176956.0Ki", "ephemeral-storage": "13176956Ki"}, "node2": {"memory": "13176956.0Ki", "ephemeral-storage": "13176956Ki"}}}, 2]'
+# curl http://localhost:4001/predict -X POST -d 'observation=["master", 3, {"master": {"4": {"success": 1, "failure": 0}, "11": {"success": 0, "failure": 1}, "8": {"success": 1, "failure": 0}}}, {"master": {"node1": {"4": 2, "11": 1}, "node2": {"8": 2}}}, {"master": {"4": {"stuck": 1}, "11": {"stuck": 1}, "8": {"stuck": 1}, "6": {"stuck": 1}, "2": {"stuck": 1}, "1": {"stuck": 2}}}, {"master": {'node1':{'memory':{'percent':'13','number':'2098Mi'},'storage':{'percent':'3','number':'4Gi'},'cpu':{'percent':'2','number':'100m'}},'node2':{'memory':{'percent':'13','number':'2098Mi'},'storage':{'percent':'3','number':'4Gi'},'cpu':{'percent':'2','number':'100m'}}}, 2]'
 # tasks_execute_situation_on_each_node_dict, current_service_on_each_node_dict,
 # stuck_tasks_situation_on_each_node_dict, resources_on_each_node_dict, epoch_index]'
 
@@ -18,8 +18,6 @@ import csv
 def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situation_on_each_node_dict,
                                current_service_on_each_node_dict,
                                stuck_tasks_situation_on_each_node_dict, resources_on_each_node_dict, epoch_index):
-    # 每个服务的所占内存,现在为1Gi
-    STANDARD_MEMORY = 1048576
     """
     贪心算法
 
@@ -36,7 +34,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     # map::   边缘master名字->>种类->数量
     stuck_tasks_situation_on_each_node: 各节点积压的任务种类与数量
     :param
-    # Dict::   边缘master名字->边缘worker的名字->memory
+    # Dict::   边缘master名字->边缘worker的名字->{memory,cpu,storage}
     resources_on_each_node: 各节点内存使用情况
     :return:
     对节点的操作：选出是增加还是删除某个类型的服务
@@ -56,8 +54,8 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     [-MAX_KIND，MAX_KIND]
     """
     result = []
-    failure_box = [-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2]
-    success_box = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+    failure_box = [-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2]
+    success_box = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 
     # 选第一个参数
     first_dict = tasks_execute_situation_on_each_node_dict[master_name]
@@ -65,8 +63,8 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         value = first_dict[type]
         failure_percent = value['failure'] / \
                           (value['success'] + value['failure'])
-        failure_box[int(type)] = failure_percent
-        success_box[int(type)] = 1 - failure_percent
+        failure_box[int(type)-1] = failure_percent
+        success_box[int(type)-1] = 1 - failure_percent
     first_param = None
 
     # 确定是否要删除,每个节点剩余都小于1Gi的话删
@@ -74,12 +72,16 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     second_dict = resources_on_each_node_dict[master_name]
     for node in second_dict:
         resources = second_dict[node]
+        cpu = resources['cpu']
+        cpu_percent = cpu['percent']
+        cpu_number = cpu['number']
         memory = resources['memory']
-        ephemeral_storage = resources['ephemeral-storage']
-        memory = float(re.match(r'^(.*?)Ki', memory).group(1))
-        ephemeral_storage = int(re.match(r'^(.*?)Ki', ephemeral_storage).group(1))
-        # 留个allocatable的4%
-        if memory > STANDARD_MEMORY + 652907:
+        memory_percent = memory['percent']
+        memory_number = memory['number']
+        ephemeral_storage = resources['storage']
+        ephemeral_storage_percent = ephemeral_storage['percent']
+        ephemeral_storage_number = ephemeral_storage['number']
+        if int(memory_percent) <= 90:
             if_delete = False
 
     if if_delete:
@@ -92,15 +94,15 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
                 current_service.append(int(type))
 
         for i in current_service:
-            if failure_box[i] == -2:
-                first_param = i
+            if failure_box[i - 1] == -2:
+                first_param = i - 1
                 break
 
         if first_param is None:
             l_failure = 1
             for i in current_service:
-                if failure_box[i] < l_failure:
-                    first_param = i
+                if failure_box[i - 1] < l_failure:
+                    first_param = i - 1
         # 传过来的是0-11，现在要换成1-12传回去
         first_param += 1
         first_param *= -1
@@ -114,7 +116,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     for i in range(len(failure_box)):
         if failure_box[i] > max_failure:
             max_failure = failure_box[i]
-            second_param = i
+            second_param = i+1
 
     min_success = 2
     # 如果最大失败率为0，说明没有失败的，那么选出成功率最小的那个
@@ -136,7 +138,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
                 max_stuck = num
                 second_param = int(type)
 
-    success = np.zeros(12).astype(int)
+    success = np.zeros(20).astype(int)
     for key, the_dict in first_dict.items():
         success[int(key)] = the_dict['success']
 
@@ -148,8 +150,6 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
             csv_write.writerow([epoch_index, reward / update_interval])  # 记得要改
             f2.close()
 
-    # 传过来的是0-11，现在要换成1-12传回去
-    second_param += 1
     result.append(master_name)
     result.append(first_param)
     result.append(second_param)
