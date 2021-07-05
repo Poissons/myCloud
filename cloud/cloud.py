@@ -579,7 +579,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     # map::   边缘master名字->>种类->数量
     stuck_tasks_situation_on_each_node: 各节点积压的任务种类与数量
     :param
-    # Dict::   边缘master名字->边缘worker的名字->memory
+    # Dict::   边缘master名字->边缘worker的名字->{memory,cpu,storage}
     resources_on_each_node: 各节点内存使用情况
     :return:
     对节点的操作：选出是增加还是删除某个类型的服务
@@ -860,7 +860,7 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     stuck_tasks_situation_on_each_node: 各节点积压的任务种类与数量
     {'master':{4:{'stuck':1},11:{'stuck':1},6:{'stuck':1}}}
     :param
-    Dict::   边缘master名字->边缘worker的名字->memory
+    Dict::   边缘master名字->边缘worker的名字->{memory,cpu,storage}
     resources_on_each_node: 各节点内存使用情况
     {'master':{'node1':{'memory':{'percent':'13','number':'2098Mi'},'storage':{'percent':'3','number':'4Gi'},'cpu':{'percent':'2','number':'100m'}},'node2':{'memory':{'percent':'13','number':'2098Mi'},'storage':{'percent':'3','number':'4Gi'},'cpu':{'percent':'2','number':'100m'}}}
     :return:
