@@ -130,7 +130,7 @@ def run_req(master_name, req, trans_from_center_to_cloud):
         pod_list = check_pod('service')
         current_pod = pod_list[pod_index]
     print('开始任务执行.')
-    val1=run(f'curl {current_pod.ip}/predict -X POST -d observation={req[0]}','Time:')
+    val1=run(f'curl http://{current_pod.ip}:3100/predict -X POST -d observation={req[0]}','Time:')
 
     mission = {'success': 1, 'failure': 0, 'stuck': -1}
     detail_mission = {'name': master_name, 'type': req[0], 'success': 0, 'failure': 0}
