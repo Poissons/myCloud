@@ -434,7 +434,7 @@ def resources_on_each_node(manager_resources_on_each_node_dict, share_lock):
     server.listen(MAX_NUM_MASTER)
     while True:
         c, addr = server.accept()
-        resources = c.recv(1024)
+        resources = c.recv(2048)
         resources = json.loads(resources.decode('utf-8'))
         print('收集函数：')
         print(resources)
