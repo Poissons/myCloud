@@ -177,7 +177,8 @@ def receive_request_from_edge(server):
             ###########################要改时间???????????????????????
             trans_from_center_to_cloud = arrive_from_center_to_cloud - req[1]
             # 此处直接使用贪心即可
-            result = pool.apply_async(run_req(master_name, req, trans_from_center_to_cloud))
+            # 不确定这里到底是不是get
+            result = pool.apply_async(run_req,(master_name, req, trans_from_center_to_cloud)).get()
             print('kind: ', req[0])
             send_task_json(conn, result)
 
