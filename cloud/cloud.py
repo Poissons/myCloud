@@ -115,7 +115,7 @@ def run(command, keyword):
     result = run_once(command)
     if keyword is not None:
         initial_time = 0
-        while result.find(keyword) == -1 and initial_time < 10:
+        while result.find(keyword) == -1 and initial_time < 23:
             result = run_once(command)
             initial_time += 1
     return result
