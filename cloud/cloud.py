@@ -123,11 +123,11 @@ def run(command, keyword):
 
 def run_req(master_name, req, trans_from_center_to_cloud):
     execute_start_time = time.time()
-    pod_list = check_pod('service' + str([req[0]]))
+    pod_list = check_pod('service')
     pod_index = offload(pod_list)
     current_pod = pod_list[pod_index]
     while current_pod.status != 'Running':
-        pod_list = check_pod('service' + str([req[0]]))
+        pod_list = check_pod('service')
         current_pod = pod_list[pod_index]
     print('开始任务执行.')
     val1=run(f'curl {current_pod.ip}/predict -X POST -d observation={req[0]}','Time:')
