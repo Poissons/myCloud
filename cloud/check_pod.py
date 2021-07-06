@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*- 
-import os 
+import os
+import re
+from dataclasses import dataclass
 
+
+@dataclass
 class Pod(object):
-	def __init__(self, name, ready, status, restarts, age, ip, node):
-		self.name = name
-		self.ready = ready
-		self.status = status
-		self.restarts = restarts
-		self.age = age
-		self.ip = ip
-		self.node = node
-
+	name: str
+	ready: str
+	status: str
+	restarts: str
+	age: str
+	ip: str
+	node: str
 
 # 输入：pod关键字
 # 输出：属性完善的pod类
@@ -21,22 +23,18 @@ def check_pod(target):
 	index = 0	
 	index_list =[]
 
-	while pods.find(target,index) !=  -1:
+	target=target+'-deployment'
+
+	while pods.find(target,index) != -1:
 		if pods.find(target,index) != len(pods)-1:
-			print("!",pods.find(target,index))
 			index_list.append(pods.find(target,index))
 			index = pods.find(target,index) + 1
-		else: 
+		else:
 			index = pods.find(target,index)
 			break
 
 	print(index_list)
-	#	while pods.find(target,index) !=  -1:
-	#		index_list.append(pods.find(target,index))
-	#		index = pods.find(target,index) + 1
-	#		#print(pods.find(target,index))
-	#	#print(index_list)
-	
+
 	pod_list = []
 	for i in range(len(index_list)):
 		target_pod = Pod('','','','','','','')
@@ -85,15 +83,8 @@ def check_pod(target):
 
 		if target_pod.status == 'Running':
 			pod_list.append(target_pod)
-		#print(target_pod.status,'!')
+			#print(target_pod.status,'!')
 	return pod_list
 
 if __name__ == '__main__':
-	target = '\n'
-	target_pod = check_pod(target)
-	for pod in target_pod:
-		print(f'[{pod.name.lstrip()}]')
-		print(pod.ready)
-		print(pod.status)
-		print(pod.node)
-
+	print(check_pod('service1'))
