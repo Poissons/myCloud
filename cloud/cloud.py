@@ -178,8 +178,6 @@ def receive_request_from_edge(server):
             # 此处直接使用贪心即可
             # 不确定这里到底是不是get
             result = pool.apply_async(run_req,(master_name, req, trans_from_center_to_cloud)).get()
-            print('kind: ', req[0])
-            send_task_json(conn, result)
 
 
 def execute():
