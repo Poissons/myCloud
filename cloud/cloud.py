@@ -174,8 +174,7 @@ def receive_request_from_edge(server):
             print('已接受到' + str(req[0]) + '号服务请求，开始执行.')
 
             arrive_from_center_to_cloud = time.time()
-            ###########################要改时间???????????????????????
-            trans_from_center_to_cloud = arrive_from_center_to_cloud - req[1]
+            trans_from_center_to_cloud = arrive_from_center_to_cloud - req[4]
             # 此处直接使用贪心即可
             # 不确定这里到底是不是get
             result = pool.apply_async(run_req,(master_name, req, trans_from_center_to_cloud)).get()
