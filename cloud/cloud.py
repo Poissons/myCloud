@@ -386,8 +386,7 @@ def current_service_on_each_node(manager_current_service_on_each_node_dict, shar
                         continue
                     else:
                         service_name = service_name.group(1)
-                    type = re.findall(r'\d+\.?\d*', service_name)
-
+                    type = re.findall(r'\d+\.?\d*', service_name)[0]
                     # inner_dict = manager.dict()
                     # inner_dict[type] = 0
                     if type in tmp2_dict:
@@ -544,7 +543,6 @@ def placement_chosen(master_name, update_interval, tasks_execute_situation_on_ea
     #                                   current_service_on_each_node_dict,stuck_tasks_situation_on_each_node_dict,
     #                                   resources_on_each_node_dict, epoch_index)
     print("采用编排算法容器：", ALG_NAME[i])
-    os.popen('kubectl apply -f ' + ALG_PATH[i]).read()
     observation = json.dumps([master_name, update_interval, tasks_execute_situation_on_each_node_dict,
                               current_service_on_each_node_dict,
                               stuck_tasks_situation_on_each_node_dict, resources_on_each_node_dict,
