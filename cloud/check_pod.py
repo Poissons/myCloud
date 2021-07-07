@@ -23,7 +23,7 @@ def check_pod(target):
 	index = 0	
 	index_list =[]
 
-	if target is not 'service-greedy' and target is not 'service-dqn':
+	if target != 'service-greedy' and target != 'service-dqn':
 		target=target+'-deployment'
 
 	while pods.find(target,index) != -1:
