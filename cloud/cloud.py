@@ -19,6 +19,7 @@ from kubernetes import client, config
 from .check_pod import Pod, check_pod
 
 CLOUD_IP = "0.0.0.0"
+EDGE_IP = "192.168.1.30"
 
 """
 各类端口
@@ -39,6 +40,8 @@ STUCK_TASKS_SITUATION_ON_EACH_NODE_PORT = 9006
 RESOURCE_ON_EACH_NODE_PORT = 9007
 # 边缘收到更新结果
 EDGE_MASTER_RECEIVE_UPDATE = 9008
+#收到云上执行的情况
+EDGE_MASTER_RECEIVE_RESULT_PORT=9009
 
 """
 各种常量
@@ -132,7 +135,7 @@ def run_req(master_name, req, trans_from_center_to_cloud):
     print('开始任务执行.')
     val1=run(f'curl http://{current_pod.ip}:3100/predict -X POST -d observation={req[0]}','Time:')
 
-    mission = {'success': 1, 'failure': 0, 'stuck': -1}
+    mission = {'success': 0, 'failure': 0, 'stuck': -1}
     detail_mission = {'name': master_name, 'type': req[0], 'success': 0, 'failure': 0}
 
     execute_total_time = time.time() - execute_start_time + 2 * trans_from_center_to_cloud
@@ -143,7 +146,6 @@ def run_req(master_name, req, trans_from_center_to_cloud):
         mission['failure'] += 1
         detail_mission['failure'] += 1
 
-    ##############自己给自己发是这样写的吗？##################
     print(mission)
     print(detail_mission)
     client1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -155,8 +157,10 @@ def run_req(master_name, req, trans_from_center_to_cloud):
     send_task_json(client2, detail_mission)
     client2.close()
 
-    result = val1
-    return result
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect((EDGE_IP, EDGE_MASTER_RECEIVE_RESULT_PORT))
+    send_task_json(client, val1)
+    client.close()
 
 
 # 输入：Socket
@@ -177,7 +181,7 @@ def receive_request_from_edge(server):
             trans_from_center_to_cloud = arrive_from_center_to_cloud - req[4]
             # 此处直接使用贪心即可
             # 不确定这里到底是不是get
-            result = pool.apply_async(run_req,(master_name, req, trans_from_center_to_cloud)).get()
+            pool.apply_async(run_req,(master_name, req, trans_from_center_to_cloud))
 
 
 def execute():
