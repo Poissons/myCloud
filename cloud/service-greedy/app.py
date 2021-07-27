@@ -105,6 +105,12 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     else:
         first_param = 0
 
+    if epoch_index > 0:
+        with open('/home/service/greedy/error.csv', 'a+', newline="") as f:
+            csv_write = csv.writer(f)
+            csv_write.writerow([first_param])  # 记得要改
+            f.close()
+
     # 选第二个参数
     # 选出失败率最大的那个
     max_failure = -2
@@ -133,6 +139,13 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
             if num > max_stuck:
                 max_stuck = num
                 second_param = int(type)
+
+    if epoch_index > 0:
+        with open('/home/service/greedy/error.csv', 'a+', newline="") as f:
+            csv_write = csv.writer(f)
+            csv_write.writerow([second_param])  # 记得要改
+            csv_write.writerow([master_name])
+            f.close()
 
     success = np.zeros(20).astype(int)
     for key, the_dict in first_dict.items():
