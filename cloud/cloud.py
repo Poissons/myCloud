@@ -280,7 +280,9 @@ def update_pod_cloud(manager_tasks_execute_situation_on_each_node_dict, manager_
             param4 = valueclone_nested_dict_proxy(
                 manager_resources_on_each_node_dict)
 
-        clear_all(this_master_name, manager_tasks_execute_situation_on_each_node_dict,
+            # 想要写对应的dict必须持有对应的锁
+            # 拿到锁，clone完了clear，最后放开锁
+            clear_all(this_master_name, manager_tasks_execute_situation_on_each_node_dict,
                   manager_current_service_on_each_node_dict,
                   manager_stuck_tasks_situation_on_each_node_dict, manager_resources_on_each_node_dict)
         print('---------------------------------开始dqn')
