@@ -63,8 +63,8 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         value = first_dict[type]
         failure_percent = value['failure'] / \
                           (value['success'] + value['failure'])
-        failure_box[int(type)-1] = failure_percent
-        success_box[int(type)-1] = 1 - failure_percent
+        failure_box[int(type) - 1] = failure_percent
+        success_box[int(type) - 1] = 1 - failure_percent
     first_param = None
 
     # 确定是否要删除,每个节点剩余都小于1Gi的话删
@@ -93,16 +93,12 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
             for type in fourth_dict:
                 current_service.append(int(type))
 
+        l_failure = 1
         for i in current_service:
-            if failure_box[i - 1] == -2:
+            if failure_box[i - 1] <= l_failure:
                 first_param = i - 1
-                break
+                l_failure = failure_box[i - 1]
 
-        if first_param is None:
-            l_failure = 1
-            for i in current_service:
-                if failure_box[i - 1] < l_failure:
-                    first_param = i - 1
         # 传过来的是0-11，现在要换成1-12传回去
         first_param += 1
         first_param *= -1
@@ -116,7 +112,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     for i in range(len(failure_box)):
         if failure_box[i] > max_failure:
             max_failure = failure_box[i]
-            second_param = i+1
+            second_param = i + 1
 
     min_success = 2
     # 如果最大失败率为0，说明没有失败的，那么选出成功率最小的那个
@@ -124,7 +120,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         for i in range(len(success_box)):
             if success_box[i] < min_success:
                 min_success = success_box[i]
-                second_param = i+1
+                second_param = i + 1
 
     # 如果最大失败率为 - 2，说明本段时间里根本没有成功/失败的任务。那么哪个积压的多选哪个
     elif max_failure == -2:
@@ -140,7 +136,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
 
     success = np.zeros(20).astype(int)
     for key, the_dict in first_dict.items():
-        success[int(key)-1] = the_dict['success']
+        success[int(key) - 1] = the_dict['success']
 
     reward = success.sum()
 
