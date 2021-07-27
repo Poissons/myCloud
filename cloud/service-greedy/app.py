@@ -124,13 +124,13 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         for i in range(len(success_box)):
             if success_box[i] < min_success:
                 min_success = success_box[i]
-                second_param = i
+                second_param = i+1
 
     # 如果最大失败率为 - 2，说明本段时间里根本没有成功/失败的任务。那么哪个积压的多选哪个
     elif max_failure == -2:
         max_stuck = 0
         # 设置为0，要是还是没有积压的那就直接选任务1
-        second_param = 0
+        second_param = 1
         fifth_dict = stuck_tasks_situation_on_each_node_dict[master_name]
         for type in fifth_dict:
             num = fifth_dict[type]['stuck']
@@ -140,7 +140,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
 
     success = np.zeros(20).astype(int)
     for key, the_dict in first_dict.items():
-        success[int(key)] = the_dict['success']
+        success[int(key)-1] = the_dict['success']
 
     reward = success.sum()
 
