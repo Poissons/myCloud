@@ -548,7 +548,7 @@ def placement_chosen(master_name, update_interval, tasks_execute_situation_on_ea
                               stuck_tasks_situation_on_each_node_dict, resources_on_each_node_dict,
                               epoch_index])
     alg_pod = check_pod(ALG_NAME[i])
-    alg_ip = alg_pod[0].ip
+    alg_ip = alg_pod[i].ip
     result = os.popen(
         'curl http://' + alg_ip + ':' + ALG_PORT[i] + '/predict -X POST -d \'observation=' + observation + '\''
     ).read()
