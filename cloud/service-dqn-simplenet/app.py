@@ -52,7 +52,7 @@ class BasicModule(t.nn.Module):
 
 
 class SimpleNet(BasicModule):
-    def __init__(self, state_size, action_size=156):
+    def __init__(self, state_size, action_size=420):
         super(SimpleNet, self).__init__()
         self.model_name = 'SimpleNet'
         self.fc1 = nn.Linear(state_size, 200)
