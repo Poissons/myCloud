@@ -168,8 +168,10 @@ def receive_request_from_edge(server):
     with Pool(processes=10) as pool:
         while True:
             conn, addr = server.accept()
-            req_bytes = conn.recv(2048)
-            req = json.loads(req_bytes.decode('utf-8'))
+            task_len = conn.recv(8)
+            task_len = int.from_bytes(task_len, byteorder='big')
+            req = conn.recv(task_len)
+            req = json.loads(req.decode('utf-8'))
             master_name = req[0]
             req = req[1]
             print('已接受到' + str(req[0]) + '号服务请求，开始执行.')
@@ -202,7 +204,9 @@ def collect_data(managerState, mdata_lock):
 
     while True:
         c, addr = s.accept()
-        this_mission = c.recv(2048)
+        mission_len = c.recv(8)
+        mission_len = int.from_bytes(mission_len, byteorder='big')
+        this_mission = c.recv(mission_len)
         mission = json.loads(this_mission.decode('utf-8'))
         print(mission)
         state['success'] += mission['success']
@@ -258,7 +262,9 @@ def update_pod_cloud(manager_tasks_execute_situation_on_each_node_dict, manager_
     epoch_index = 0
     while True:
         c, addr = server.accept()
-        pre = c.recv(2048)
+        pre_len = c.recv(8)
+        pre_len = int.from_bytes(pre_len, byteorder='big')
+        pre = c.recv(pre_len)
         pre = json.loads(pre.decode('utf-8'))
         this_master_name = pre[0]
         update_interval = pre[1]
@@ -315,7 +321,9 @@ def collect_tasks_execute_situation_on_each_node(manager_tasks_execute_situation
     with Manager() as manager:
         while True:
             c, addr = server.accept()
-            this_mission = c.recv(2048)
+            mission_len = c.recv(8)
+            mission_len = int.from_bytes(mission_len, byteorder='big')
+            this_mission = c.recv(mission_len)
             mission = json.loads(this_mission.decode('utf-8'))
             c.close()
             name = mission['name']
@@ -362,8 +370,10 @@ def current_service_on_each_node(manager_current_service_on_each_node_dict, shar
         while True:
             conn, addr = server.accept()
             # 格式[master_name, [pod.__dict__ for pod in update_info], 0]
-            current_service_bytes = conn.recv(2048)
-            current_service = json.loads(current_service_bytes.decode('utf-8'))
+            current_service_len = conn.recv(8)
+            current_service_len = int.from_bytes(current_service_len, byteorder='big')
+            current_service = conn.recv(current_service_len)
+            current_service = json.loads(current_service.decode('utf-8'))
             current_service[1] = [make_pod(pod_dict)
                                   for pod_dict in current_service[1]]
             master_name = current_service[0]
@@ -410,7 +420,9 @@ def stuck_tasks_situation_on_each_node(manager_stuck_tasks_situation_on_each_nod
     with Manager() as manager:
         while True:
             c, addr = server.accept()
-            this_mission = c.recv(2048)
+            mission_len = c.recv(8)
+            mission_len = int.from_bytes(mission_len, byteorder='big')
+            this_mission = c.recv(mission_len)
             detail_mission = json.loads(this_mission.decode('utf-8'))
             c.close()
             name = detail_mission['name']
@@ -434,7 +446,9 @@ def resources_on_each_node(manager_resources_on_each_node_dict, share_lock):
     server.listen(MAX_NUM_MASTER)
     while True:
         c, addr = server.accept()
-        resources = c.recv(2048)
+        resources_len = c.recv(8)
+        resources_len = int.from_bytes(resources_len, byteorder='big')
+        resources = c.recv(resources_len)
         resources = json.loads(resources.decode('utf-8'))
         print('收集函数：')
         print(resources)
@@ -548,7 +562,7 @@ def placement_chosen(master_name, update_interval, tasks_execute_situation_on_ea
                               stuck_tasks_situation_on_each_node_dict, resources_on_each_node_dict,
                               epoch_index])
     alg_pod = check_pod(ALG_NAME[i])
-    alg_ip = alg_pod[i].ip
+    alg_ip = alg_pod[0].ip
     result = os.popen(
         'curl http://' + alg_ip + ':' + ALG_PORT[i] + '/predict -X POST -d \'observation=' + observation + '\''
     ).read()
