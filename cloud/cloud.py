@@ -88,8 +88,11 @@ state = {
 # 作用：将处理结果发送给终端
 def send_task_json(client, result):
     result = json.dumps(result)
-    client.sendall(bytes(result.encode('utf-8')))
-
+    task=bytes(result.encode('utf-8'))
+    task_len=len(task)
+    task_len= task_len.to_bytes(8, byteorder='big')
+    client.sendall(task_len)
+    client.sendall(task)
 
 """
 执行请求
