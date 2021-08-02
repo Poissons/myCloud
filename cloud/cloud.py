@@ -38,8 +38,6 @@ CURRENT_SERVICE_ON_EACH_NODE_PORT = 9005
 STUCK_TASKS_SITUATION_ON_EACH_NODE_PORT = 9006
 # 各节点内存使用情况
 RESOURCE_ON_EACH_NODE_PORT = 9007
-# 边缘收到更新结果
-EDGE_MASTER_RECEIVE_UPDATE = 9008
 #收到云上执行的情况
 EDGE_MASTER_RECEIVE_RESULT_PORT=9009
 
@@ -295,6 +293,7 @@ def update_pod_cloud(manager_tasks_execute_situation_on_each_node_dict, manager_
         greedy_result = placement_chosen(
             this_master_name, update_interval, param1, param2, param3, param4, 0, epoch_index)
         # 发送回去
+        greedy_result=[epoch_index,greedy_result]
         send_task_json(c, greedy_result)
         c.close()
         epoch_index += 1
