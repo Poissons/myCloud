@@ -5,8 +5,8 @@ import matplotlib
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    dqn_data = pd.read_csv(r'./5/dqn/SimpleNet/reward_hist5.csv', header=None, names=['index', 'reward_percent'])
-    greedy_data = pd.read_csv(r'./5/greedy/reward_hist5.csv', header=None, names=['index', 'reward_percent'])
+    dqn_data = pd.read_csv(r'./5_22_4/dqn/reward_hist.csv', header=None, names=['index', 'reward_percent'])
+    greedy_data = pd.read_csv(r'./5_22_4/greedy/reward_hist.csv', header=None, names=['index', 'reward_percent'])
 
 
     plt.title('reward', fontsize=20)
@@ -17,5 +17,5 @@ if __name__ == "__main__":
     # plt.plot(x, stuck_y, color='goldenrod', linewidth=1, linestyle='-', label='stuck')
 
     # plt.legend(loc=2)
-    plt.savefig('./5/reward.png')
+    plt.savefig('./5_22_4/reward.png')
     plt.show()
