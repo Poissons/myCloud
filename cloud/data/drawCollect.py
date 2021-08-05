@@ -18,7 +18,10 @@ def is_update(y_total):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    data = pd.read_csv(r'./5/greedy/collect5compute.csv', header=None,
+    # data = pd.read_csv(r'./5_22_4/dqn/collect_compute.csv', header=None,
+    #                    names=['success', 'failure', 'stuck', 'success_percent',
+    #                           'failure_percent', 'stuck_percent'])
+    data = pd.read_csv(r'./5_22_4/greedy/collect_compute.csv', header=None,
                        names=['success', 'failure', 'stuck', 'success_percent',
                               'failure_percent', 'stuck_percent'])
     x = np.arange(1, data.shape[0]).tolist()
@@ -34,5 +37,6 @@ if __name__ == "__main__":
     plt.plot(x, stuck_y, color='goldenrod', linewidth=1, linestyle='-', label='stuck')
 
     plt.legend(loc=2)
-    plt.savefig('./5/greedy/collect5.png')
+    # plt.savefig('./5_22_4/dqn/collect.png')
+    plt.savefig('./5_22_4/greedy/collect.png')
     plt.show()
