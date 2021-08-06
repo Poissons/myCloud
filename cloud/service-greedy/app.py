@@ -81,7 +81,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         ephemeral_storage = resources['storage']
         ephemeral_storage_percent = ephemeral_storage['percent']
         ephemeral_storage_number = ephemeral_storage['number']
-        if int(memory_percent) < 20:
+        if int(memory_percent) < 90:
             if_delete = False
 
     if if_delete:
@@ -140,12 +140,11 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
                 max_stuck = num
                 second_param = int(type)
 
-    if epoch_index > 0:
-        with open('/home/service/greedy/error.csv', 'a+', newline="") as f:
-            csv_write = csv.writer(f)
-            csv_write.writerow([second_param])  # 记得要改
-            csv_write.writerow([master_name])
-            f.close()
+    with open('/home/service/greedy/error.csv', 'a+', newline="") as f:
+        csv_write = csv.writer(f)
+        csv_write.writerow([second_param])  # 记得要改
+        csv_write.writerow([master_name])
+        f.close()
 
     success = np.zeros(20).astype(int)
     for key, the_dict in first_dict.items():
