@@ -81,7 +81,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         ephemeral_storage = resources['storage']
         ephemeral_storage_percent = ephemeral_storage['percent']
         ephemeral_storage_number = ephemeral_storage['number']
-        if int(memory_percent) <= 90:
+        if int(memory_percent) < 20:
             if_delete = False
 
     if if_delete:
