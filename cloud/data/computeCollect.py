@@ -1,8 +1,8 @@
 import pandas as pd
 
 if __name__ == "__main__":
-    data = pd.read_csv(r'./5_22_4/greedy/collect.csv', header=None, names=['success', 'failure', 'stuck'])
-    data = pd.read_csv(r'./5_22_4/dqn/collect.csv', header=None, names=['success', 'failure', 'stuck'])
+    data = pd.read_csv(r'./10_21_6/greedy/collect.csv', header=None, names=['success', 'failure', 'stuck'])
+    # data = pd.read_csv(r'./5_22_4/dqn/collect.csv', header=None, names=['success', 'failure', 'stuck'])
 
     success_percent = []
     failure_percent = []
@@ -23,5 +23,5 @@ if __name__ == "__main__":
     data['success_percent'] = success_percent
     data['failure_percent'] = failure_percent
     data['stuck_percent'] = stuck_percent
-    data.to_csv('./5_22_4/greedy/collect_compute.csv', index=False)
-    data.to_csv('./5_22_4/dqn/collect_compute.csv', index=False)
+    data.to_csv('./10_21_6/greedy/collect_compute.csv', index=False)
+    # data.to_csv('./5_22_4/dqn/collect_compute.csv', index=False)
