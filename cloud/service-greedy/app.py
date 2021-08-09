@@ -53,6 +53,8 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     [-MAX_KIND，MAX_KIND]
     [-MAX_KIND，MAX_KIND]
     """
+    total_task_sum = 0
+
     result = []
     failure_box = [-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2]
     success_box = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
@@ -63,6 +65,9 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         value = first_dict[type]
         failure_percent = value['failure'] / \
                           (value['success'] + value['failure'])
+
+        # 加上成功失败的
+        total_task_sum += value['success'] + value['failure']
         failure_box[int(type) - 1] = failure_percent
         success_box[int(type) - 1] = 1 - failure_percent
     first_param = None
@@ -155,7 +160,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     if epoch_index > 0:
         with open('/home/service/greedy/reward_hist.csv', 'a+', newline="") as f2:
             csv_write = csv.writer(f2)
-            csv_write.writerow([epoch_index, reward / update_interval])  # 记得要改
+            csv_write.writerow([epoch_index, reward / total_task_sum])  # 记得要改
             f2.close()
 
     result.append(master_name)
