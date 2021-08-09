@@ -72,8 +72,8 @@ class SimpleNet(BasicModule):
 
 
 class DQNAgent:
-    def __init__(self, state_size, action_size, replay_memory_size,mini_batch_size, replace_target_period,
-                 gamma, epsilon=1.0, epsilon_min=0.01, epsilon_decrement=0.001,learning_rate=0.005):
+    def __init__(self, state_size, action_size, replay_memory_size, mini_batch_size, replace_target_period,
+                 gamma, epsilon=1.0, epsilon_min=0.01, epsilon_decrement=0.001, learning_rate=0.005):
         self.state_size = state_size
         self.action_size = action_size
         # 能存多少数据
@@ -194,9 +194,12 @@ def obtain_actual_action(map_fn, control_action_fn):
     return actual_delete.item(), actual_add.item()
 
 
-def calc_reward(success_t):
-    success_t = t.sum(success_t, dim=1)
-    return success_t
+def calc_reward(success_t, total_task_sum):
+    if total_task_sum == 0:
+        return t.sum(success_t, dim=1) 
+    else:
+        success_t = t.sum(success_t, dim=1) * 100 / total_task_sum
+        return success_t
 
 
 def q_learning_placement(master_name, update_interval, tasks_execute_situation_on_each_node_dict,
@@ -228,6 +231,7 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     [-MAX_KIND，MAX_KIND]
     [-MAX_KIND，MAX_KIND]
     """
+    total_task_sum = 0
     success = np.zeros(20).astype(int)
     failure = np.zeros(20).astype(int)
     stuck = np.zeros(20).astype(int)
@@ -240,15 +244,17 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     param4 = resources_on_each_node_dict[master_name]
 
     for key, the_dict in param1.items():
-        success[int(key)-1] = the_dict['success']
-        failure[int(key)-1] = the_dict['failure']
+        success[int(key) - 1] = the_dict['success']
+        failure[int(key) - 1] = the_dict['failure']
+
+    total_task_sum = np.sum(success) + np.sum(failure)
 
     for key1, value1 in param2.items():
         for key2, value2 in value1.items():
-            service[int(key2)-1] += value2
+            service[int(key2) - 1] += value2
 
     for key, the_dict in param3.items():
-        stuck[int(key)-1] = the_dict['stuck']
+        stuck[int(key) - 1] = the_dict['stuck']
 
     for key, the_dict in param4.items():
         cpu = the_dict['cpu']
@@ -316,7 +322,7 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
 
     # get the reward，tensor形式
     the_success = current_state[:, :20]
-    reward = calc_reward(the_success)
+    reward = calc_reward(the_success, total_task_sum)
 
     if_delete = np.array([1])
     if next_delete == 0:
@@ -330,7 +336,7 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
             ephemeral_storage = the_dict['storage']
             ephemeral_storage_percent = ephemeral_storage['percent']
             ephemeral_storage_number = ephemeral_storage['number']
-            if int(memory_percent)+6 <= 90:
+            if int(memory_percent) + 6 <= 90:
                 if_delete = np.array([0])
                 break
 
@@ -356,7 +362,7 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     if epoch_index > 0:
         with open('/home/service/dqn-simplenet/reward_hist.csv', 'a+', newline="") as f2:
             csv_write = csv.writer(f2)
-            csv_write.writerow([epoch_index, reward.item() / update_interval])  # 记得要改
+            csv_write.writerow([epoch_index, reward.item() / 100])  # 记得要改
             f2.close()
 
     if not os.path.exists('/home/service/dqn-simplenet'):
