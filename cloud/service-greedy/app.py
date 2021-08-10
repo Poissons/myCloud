@@ -110,11 +110,10 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     else:
         first_param = 0
 
-    if epoch_index > 0:
-        with open('/home/service/greedy/error.csv', 'a+', newline="") as f:
-            csv_write = csv.writer(f)
-            csv_write.writerow([first_param])  # 记得要改
-            f.close()
+    with open('/home/service/greedy/error.csv', 'a+', newline="") as f:
+        csv_write = csv.writer(f)
+        csv_write.writerow([first_param])  # 记得要改
+        f.close()
 
     # 选第二个参数
     # 选出失败率最大的那个
