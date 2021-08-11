@@ -18,10 +18,10 @@ def is_update(y_total):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    greedy_data = pd.read_csv(r'./5_22_4/greedy/collect_compute.csv', header=None,
+    greedy_data = pd.read_csv(r'./10_21_6/greedy/collect_compute.csv', header=None,
                               names=['success', 'failure', 'stuck', 'success_percent',
                                      'failure_percent', 'stuck_percent'])
-    dqn_data = pd.read_csv(r'./5_22_4/dqn/collect_compute.csv', header=None,
+    dqn_data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', header=None,
                            names=['success', 'failure', 'stuck', 'success_percent',
                                   'failure_percent', 'stuck_percent'])
     x = np.arange(1, dqn_data.shape[0]).tolist()
@@ -35,5 +35,5 @@ if __name__ == "__main__":
     plt.plot(x, dqn_y, color='darkblue', linewidth=1.5, linestyle='--', label='dqn')
 
     plt.legend(loc=2)
-    plt.savefig('./5_22_4/collect.png')
+    plt.savefig('./10_21_6/collect.png')
     plt.show()
