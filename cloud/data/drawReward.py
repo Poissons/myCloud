@@ -20,18 +20,18 @@ def prepare_data(path):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    dqn_path = r'./10_21_6/dqn/reward_hist.csv'
-    dqn_data = prepare_data(dqn_path)
-    greedy_path = r'./10_21_6/greedy/reward_hist.csv'
+    # dqn_path = r'./10_21_6/dqn/reward_hist.csv'
+    # dqn_data = prepare_data(dqn_path)
+    greedy_path = r'./5_21_6/greedy/reward_hist.csv'
     greedy_data = prepare_data(greedy_path)
 
     plt.title('reward', fontsize=20)
     plt.ylabel(u'成功率', fontsize=10)
 
-    plt.plot(dqn_data['epoch'], dqn_data['reward_percent'], color='deeppink', linewidth=1.5, label='dqn')
+    # plt.plot(dqn_data['epoch'], dqn_data['reward_percent'], color='deeppink', linewidth=1.5, label='dqn')
     plt.plot(greedy_data['epoch'], greedy_data['reward_percent'], color='darkblue', linewidth=1.5, label='failure')
     # plt.plot(x, stuck_y, color='goldenrod', linewidth=1, linestyle='-', label='stuck')
 
     # plt.legend(loc=2)
-    plt.savefig('./10_21_6/reward.png')
+    plt.savefig('./5_21_6/reward.png')
     plt.show()
