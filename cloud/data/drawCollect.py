@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', header=None,
     #                    names=['success', 'failure', 'stuck', 'success_percent',
     #                           'failure_percent', 'stuck_percent'])
-    data = pd.read_csv(r'./5_21_6/greedy/collect_compute.csv', header=None,
+    data = pd.read_csv(r'./20_21_6/greedy/collect_compute.csv', header=None,
                        names=['success', 'failure', 'stuck', 'success_percent',
                               'failure_percent', 'stuck_percent'])
     x = np.arange(1, data.shape[0]).tolist()
@@ -38,5 +38,5 @@ if __name__ == "__main__":
 
     plt.legend(loc=2)
     # plt.savefig('./10_21_6/dqn/collect.png')
-    plt.savefig('./5_21_6/greedy/collect.png')
+    plt.savefig('./20_21_6/greedy/collect.png')
     plt.show()

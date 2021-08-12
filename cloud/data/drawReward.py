@@ -22,7 +22,7 @@ if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
     # dqn_path = r'./10_21_6/dqn/reward_hist.csv'
     # dqn_data = prepare_data(dqn_path)
-    greedy_path = r'./5_21_6/greedy/reward_hist.csv'
+    greedy_path = r'./20_21_6/greedy/reward_hist.csv'
     greedy_data = prepare_data(greedy_path)
 
     plt.title('reward', fontsize=20)
@@ -33,5 +33,5 @@ if __name__ == "__main__":
     # plt.plot(x, stuck_y, color='goldenrod', linewidth=1, linestyle='-', label='stuck')
 
     # plt.legend(loc=2)
-    plt.savefig('./5_21_6/reward.png')
+    plt.savefig('./20_21_6/reward.png')
     plt.show()
