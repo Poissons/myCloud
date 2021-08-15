@@ -196,7 +196,7 @@ def obtain_actual_action(map_fn, control_action_fn):
 
 def calc_reward(success_t, total_task_sum):
     if total_task_sum == 0:
-        return t.sum(success_t, dim=1)
+        return t.sum(success_t, dim=1) 
     else:
         success_t = t.sum(success_t, dim=1) * 100 / total_task_sum
         return success_t
@@ -314,47 +314,41 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
             finally:
                 f.close()
 
-    not_proper = True
-    while not_proper:
-        # 得到state状态，tensor形式
-        control_action = agent.act(current_state)
+    # 得到state状态，tensor形式
+    control_action = agent.act(current_state)
 
-        # 得到加减
-        next_delete, next_add = obtain_actual_action(CONTROL_ACTION_MAP, control_action)
+    # 得到加减
+    next_delete, next_add = obtain_actual_action(CONTROL_ACTION_MAP, control_action)
 
-        if service[next_delete * (-1) - 1] == 0:
-            reward = -1
-        else:
-            # get the reward，tensor形式
-            the_success = current_state[:, :20]
-            reward = calc_reward(the_success, total_task_sum)
-            not_proper = False
+    # get the reward，tensor形式
+    the_success = current_state[:, :20]
+    reward = calc_reward(the_success, total_task_sum)
 
-        if_delete = np.array([1])
-        if next_delete == 0:
-            for key, the_dict in param4.items():
-                cpu = the_dict['cpu']
-                cpu_percent = cpu['percent']
-                cpu_number = cpu['number']
-                memory = the_dict['memory']
-                memory_percent = memory['percent']
-                memory_number = memory['number']
-                ephemeral_storage = the_dict['storage']
-                ephemeral_storage_percent = ephemeral_storage['percent']
-                ephemeral_storage_number = ephemeral_storage['number']
-                if int(memory_percent) + 6 <= 90:
-                    if_delete = np.array([0])
-                    break
+    if_delete = np.array([1])
+    if next_delete == 0:
+        for key, the_dict in param4.items():
+            cpu = the_dict['cpu']
+            cpu_percent = cpu['percent']
+            cpu_number = cpu['number']
+            memory = the_dict['memory']
+            memory_percent = memory['percent']
+            memory_number = memory['number']
+            ephemeral_storage = the_dict['storage']
+            ephemeral_storage_percent = ephemeral_storage['percent']
+            ephemeral_storage_number = ephemeral_storage['number']
+            if int(memory_percent) + 6 <= 90:
+                if_delete = np.array([0])
+                break
 
-        control_action = np.array([control_action])
-        control_action = t.IntTensor(control_action).view(1, -1)
-        reward = np.array([reward])
-        reward = t.FloatTensor(reward).view(1, -1)
-        if_delete = np.array([1])
-        next_state = np.concatenate((success, failure, stuck, service, if_delete))
-        next_state = t.FloatTensor(next_state).view(1, -1)
+    control_action = np.array([control_action])
+    control_action = t.IntTensor(control_action).view(1, -1)
+    reward = np.array([reward])
+    reward = t.FloatTensor(reward).view(1, -1)
+    if_delete = np.array([1])
+    next_state = np.concatenate((success, failure, stuck, service, if_delete))
+    next_state = t.FloatTensor(next_state).view(1, -1)
 
-        agent.remember(current_state, control_action, reward, next_state)
+    agent.remember(current_state, control_action, reward, next_state)
 
     # if there are enough transitions, perform learning
     if epoch_index >= MINI_BATCH_SIZE:
