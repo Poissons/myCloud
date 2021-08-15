@@ -291,7 +291,7 @@ def update_pod_cloud(manager_tasks_execute_situation_on_each_node_dict, manager_
                   manager_stuck_tasks_situation_on_each_node_dict, manager_resources_on_each_node_dict)
         print('---------------------------------开始dqn')
         greedy_result = placement_chosen(
-            this_master_name, update_interval, param1, param2, param3, param4, 0, epoch_index)
+            this_master_name, update_interval, param1, param2, param3, param4, 1, epoch_index)
         # 发送回去
         greedy_result=[epoch_index,greedy_result]
         send_task_json(c, greedy_result)

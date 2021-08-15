@@ -321,15 +321,13 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
 
         # 得到加减
         next_delete, next_add = obtain_actual_action(CONTROL_ACTION_MAP, control_action)
-
-        if service[next_delete * (-1) - 1] == 0:
+        if service[next_delete - 1] == 0:
             reward = -1
         else:
             # get the reward，tensor形式
             the_success = current_state[:, :20]
             reward = calc_reward(the_success, total_task_sum)
             not_proper = False
-
         if_delete = np.array([1])
         if next_delete == 0:
             for key, the_dict in param4.items():
