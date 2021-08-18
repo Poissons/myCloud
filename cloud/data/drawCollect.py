@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import matplotlib
+import seaborn as sns
 
 
 def is_update(y_total):
@@ -18,25 +19,17 @@ def is_update(y_total):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', header=None,
-                       names=['success', 'failure', 'stuck', 'success_percent',
-                              'failure_percent', 'stuck_percent'])
-    # data = pd.read_csv(r'./10_21_6/greedy/collect_compute.csv', header=None,
-    #                    names=['success', 'failure', 'stuck', 'success_percent',
-    #                           'failure_percent', 'stuck_percent'])
-    x = np.arange(1, data.shape[0]).tolist()
-    success_y = data['success_percent'][1:].tolist()
-    failure_y = data['failure_percent'][1:].tolist()
-    stuck_y = data['stuck_percent'][1:].tolist()
+    data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', usecols=[3, 4, 5])
+    # data = pd.read_csv(r'./10_21_6/greedy/collect_compute.csv', usecols=[3, 4, 5])
 
-    plt.title(u'任务执行情况统计表', fontsize=20)
-    plt.ylabel(u'比例', fontsize=10)
+    plt.title('tasks execution situation')
+    plt.ylabel('percent')
 
-    plt.plot(x, success_y, color='deeppink', linewidth=1.5, linestyle=':', label='success')
-    plt.plot(x, failure_y, color='darkblue', linewidth=1.5, linestyle='--', label='failure')
-    plt.plot(x, stuck_y, color='goldenrod', linewidth=1, linestyle='-', label='stuck')
+    sns.lineplot(data=data['success_percent'], label="success")
+    sns.lineplot(data=data['failure_percent'], label="failure")
+    sns.lineplot(data=data['stuck_percent'], label="stuck")
 
-    plt.legend(loc=2)
     plt.savefig('./10_21_6/dqn/collect.png')
     # plt.savefig('./10_21_6/greedy/collect.png')
+
     plt.show()

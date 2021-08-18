@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import matplotlib
+import seaborn as sns
 
 
 def is_update(y_total):
@@ -18,22 +19,14 @@ def is_update(y_total):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    greedy_data = pd.read_csv(r'./10_21_6/greedy/collect_compute.csv', header=None,
-                              names=['success', 'failure', 'stuck', 'success_percent',
-                                     'failure_percent', 'stuck_percent'])
-    dqn_data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', header=None,
-                           names=['success', 'failure', 'stuck', 'success_percent',
-                                  'failure_percent', 'stuck_percent'])
-    x = np.arange(1, dqn_data.shape[0]).tolist()
-    greedy_y = greedy_data['success_percent'][1:].tolist()
-    dqn_y = dqn_data['success_percent'][1:].tolist()
+    greedy_data = pd.read_csv(r'./10_21_6/greedy/collect_compute.csv', usecols=[3])
+    dqn_data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', usecols=[3])
 
-    plt.title(u'任务执行情况统计表', fontsize=20)
-    plt.ylabel(u'比例', fontsize=10)
+    plt.title('tasks execution situation')
+    plt.ylabel('percent')
 
-    plt.plot(x, greedy_y, color='deeppink', linewidth=1.5, linestyle=':', label='greedy')
-    plt.plot(x, dqn_y, color='darkblue', linewidth=1.5, linestyle='--', label='dqn')
+    sns.lineplot(data=dqn_data['success_percent'], label="dqn")
+    sns.lineplot(data=greedy_data['success_percent'], label="greedy")
 
-    plt.legend(loc=2)
     plt.savefig('./10_21_6/collect.png')
     plt.show()

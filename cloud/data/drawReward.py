@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import matplotlib
+import seaborn as sns
 
 
 def prepare_data(path):
@@ -25,12 +26,11 @@ if __name__ == "__main__":
     greedy_path = r'./10_21_6/greedy/reward_hist.csv'
     greedy_data = prepare_data(greedy_path)
 
-    plt.title('reward', fontsize=20)
-    plt.ylabel(u'成功率', fontsize=10)
+    plt.title('reward')
+    plt.ylabel('percent')
 
-    plt.plot(dqn_data['epoch'], dqn_data['reward_percent'], color='darkblue', linewidth=1.5, label='dqn')
-    plt.plot(greedy_data['epoch'], greedy_data['reward_percent'], color='deeppink', linewidth=1.5, label='greedy')
+    sns.lineplot(data=dqn_data['reward_percent'], label="dqn")
+    sns.lineplot(data=greedy_data['reward_percent'], label="greedy")
 
-    plt.legend(loc=2)
     plt.savefig('./10_21_6/reward.png')
     plt.show()

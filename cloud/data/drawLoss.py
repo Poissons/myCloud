@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import pandas as pd
+import seaborn as sns
 
 
 def prepare_data(path):
@@ -19,10 +20,9 @@ def prepare_data(path):
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
     data = prepare_data(r'./10_21_6/dqn/loss_hist.csv')
-    plt.title('Loss', fontsize=20)
-    plt.ylabel(u'loss', fontsize=10)
+    plt.title('Loss')
 
-    plt.plot(data['epoch'], data['loss'], color='deeppink', linewidth=1.5)
+    sns.lineplot(data=data['loss'], label="loss")
 
     plt.savefig('./10_21_6/dqn/loss.png')
     plt.show()
