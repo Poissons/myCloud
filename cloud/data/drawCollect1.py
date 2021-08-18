@@ -2,7 +2,9 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import matplotlib
-import seaborn as sns
+
+
+# import seaborn as sns
 
 
 def is_update(y_total):
@@ -19,17 +21,15 @@ def is_update(y_total):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    greedy_data = pd.read_csv(r'./10_21_6/greedy/collect_compute.csv', usecols=[3])
-    dqn_data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', usecols=[3])
-
+    data = pd.read_csv(r'./10_21_6/dqn/collect_compute2.csv')
     plt.title('tasks execution situation')
-    plt.ylabel('percent')
-
-    sns.lineplot(data=dqn_data['success_percent'], label="dqn")
-    sns.lineplot(data=greedy_data['success_percent'], label="greedy")
-
-    plt.xlim(0, len(greedy_data['success_percent']) - 1)
+    plt.stackplot(
+        np.arange(len(data['success_percent'])),
+        data['success_percent'], data['stuck_percent'], data['failure_percent'],
+        labels=('success', 'stuck', 'failure'),
+        colors=('orange', 'lightgreen', 'lightblue'),
+    )
+    plt.xlim(0, len(data['success_percent']) - 1)
     plt.ylim(0, 1)
-
-    plt.savefig('./10_21_6/collect.png')
+    plt.legend()
     plt.show()

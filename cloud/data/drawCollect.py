@@ -29,6 +29,8 @@ if __name__ == "__main__":
     sns.lineplot(data=data['failure_percent'], label="failure")
     sns.lineplot(data=data['stuck_percent'], label="stuck")
 
+    plt.xlim(0, len(data['success_percent']) - 1)
+    plt.ylim(0, 1)
     plt.savefig('./10_21_6/dqn/collect.png')
     # plt.savefig('./10_21_6/greedy/collect.png')
 

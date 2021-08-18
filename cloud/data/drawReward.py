@@ -32,5 +32,7 @@ if __name__ == "__main__":
     sns.lineplot(data=dqn_data['reward_percent'], label="dqn")
     sns.lineplot(data=greedy_data['reward_percent'], label="greedy")
 
+    plt.xlim(0, len(greedy_data['reward_percent']) - 1)
+
     plt.savefig('./10_21_6/reward.png')
     plt.show()

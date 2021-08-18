@@ -24,5 +24,7 @@ if __name__ == "__main__":
 
     sns.lineplot(data=data['loss'], label="loss")
 
+    plt.xlim(0, len(data['loss']) - 1)
+
     plt.savefig('./10_21_6/dqn/loss.png')
     plt.show()
