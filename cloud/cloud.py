@@ -38,8 +38,8 @@ CURRENT_SERVICE_ON_EACH_NODE_PORT = 9005
 STUCK_TASKS_SITUATION_ON_EACH_NODE_PORT = 9006
 # 各节点内存使用情况
 RESOURCE_ON_EACH_NODE_PORT = 9007
-#收到云上执行的情况
-EDGE_MASTER_RECEIVE_RESULT_PORT=9009
+# 收到云上执行的情况
+EDGE_MASTER_RECEIVE_RESULT_PORT = 9009
 
 """
 各种常量
@@ -86,11 +86,12 @@ state = {
 # 作用：将处理结果发送给终端
 def send_task_json(client, result):
     result = json.dumps(result)
-    task=bytes(result.encode('utf-8'))
-    task_len=len(task)
-    task_len= task_len.to_bytes(8, byteorder='big')
+    task = bytes(result.encode('utf-8'))
+    task_len = len(task)
+    task_len = task_len.to_bytes(8, byteorder='big')
     client.sendall(task_len)
     client.sendall(task)
+
 
 """
 执行请求
@@ -112,6 +113,7 @@ def offload(pod_list):
 def run_once(command):
     return os.popen(command).read()
 
+
 def run(command, keyword):
     result = run_once(command)
     if keyword is not None:
@@ -131,7 +133,7 @@ def run_req(master_name, req, trans_from_center_to_cloud):
         pod_list = check_pod('service')
         current_pod = pod_list[pod_index]
     print('开始任务执行.')
-    val1=run(f'curl http://{current_pod.ip}:3100/predict -X POST -d observation={req[0]}','Time:')
+    val1 = run(f'curl http://{current_pod.ip}:3100/predict -X POST -d observation={req[0]}', 'Time:')
 
     mission = {'success': 0, 'failure': 0, 'stuck': -1}
     detail_mission = {'name': master_name, 'type': req[0], 'success': 0, 'failure': 0}
@@ -181,7 +183,7 @@ def receive_request_from_edge(server):
             trans_from_center_to_cloud = arrive_from_center_to_cloud - req[4]
             # 此处直接使用贪心即可
             # 不确定这里到底是不是get
-            pool.apply_async(run_req,(master_name, req, trans_from_center_to_cloud))
+            pool.apply_async(run_req, (master_name, req, trans_from_center_to_cloud))
 
 
 def execute():
@@ -287,13 +289,13 @@ def update_pod_cloud(manager_tasks_execute_situation_on_each_node_dict, manager_
             # 想要写对应的dict必须持有对应的锁
             # 拿到锁，clone完了clear，最后放开锁
             clear_all(this_master_name, manager_tasks_execute_situation_on_each_node_dict,
-                  manager_current_service_on_each_node_dict,
-                  manager_stuck_tasks_situation_on_each_node_dict, manager_resources_on_each_node_dict)
+                      manager_current_service_on_each_node_dict,
+                      manager_stuck_tasks_situation_on_each_node_dict, manager_resources_on_each_node_dict)
         print('---------------------------------开始dqn')
         greedy_result = placement_chosen(
             this_master_name, update_interval, param1, param2, param3, param4, 1, epoch_index)
         # 发送回去
-        greedy_result=[epoch_index,greedy_result]
+        greedy_result = [epoch_index, greedy_result]
         send_task_json(c, greedy_result)
         c.close()
         epoch_index += 1
@@ -327,11 +329,18 @@ def collect_tasks_execute_situation_on_each_node(manager_tasks_execute_situation
             mission_len = int.from_bytes(mission_len, byteorder='big')
             this_mission = c.recv(mission_len)
             mission = json.loads(this_mission.decode('utf-8'))
-            c.close()
-            name = mission['name']
-            type = mission['type']
-            success = mission['success']
-            failure = mission['failure']
+
+            print(mission)
+            if len(mission) == 2:
+                mask = mission[1]
+                mission = mission[0]
+            else:
+                mask = 0
+            if len(mission) > 0:
+                name = mission['name']
+                type = mission['type']
+                success = mission['success']
+                failure = mission['failure']
             # if name in tasks_execute_situation_on_each_node_dict.keys():
             #     tmp_dict = tasks_execute_situation_on_each_node_dict[name]
             #     if type in tmp_dict:
@@ -356,6 +365,11 @@ def collect_tasks_execute_situation_on_each_node(manager_tasks_execute_situation
                 tmp2_dict = tmp1_dict.setdefault(type, inner_dict)
                 tmp2_dict['success'] += success
                 tmp2_dict['failure'] += failure
+
+            if mask == 1:
+                return_result = valueclone_nested_dict_proxy(manager_tasks_execute_situation_on_each_node_dict)
+                send_task_json(c, return_result)
+                c.close()
 
 
 # 边缘master名字->边缘worker的名字->种类->数量
@@ -683,7 +697,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
     for i in range(len(failure_box)):
         if failure_box[i] > max_failure:
             max_failure = failure_box[i]
-            second_param = i+1
+            second_param = i + 1
 
     min_success = 2
     # 如果最大失败率为0，说明没有失败的，那么选出成功率最小的那个
@@ -691,7 +705,7 @@ def greedy_algorithm_placement(master_name, update_interval, tasks_execute_situa
         for i in range(len(success_box)):
             if success_box[i] < min_success:
                 min_success = success_box[i]
-                second_param = i+1
+                second_param = i + 1
 
     # 如果最大失败率为 - 2，说明本段时间里根本没有成功/失败的任务。那么哪个积压的多选哪个
     elif max_failure == -2:
@@ -895,15 +909,15 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
     param4 = resources_on_each_node_dict[master_name]
 
     for key, the_dict in param1.items():
-        success[key-1] = the_dict['success']
-        failure[key-1] = the_dict['failure']
+        success[key - 1] = the_dict['success']
+        failure[key - 1] = the_dict['failure']
 
     for key1, value1 in param2.items():
         for key2, value2 in value1.items():
-            service[key2-1] += value2
+            service[key2 - 1] += value2
 
     for key, the_dict in param3.items():
-        stuck[key-1] = the_dict['stuck']
+        stuck[key - 1] = the_dict['stuck']
 
     for key, the_dict in param4.items():
         cpu = the_dict['cpu']
@@ -995,7 +1009,7 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
             ephemeral_storage = the_dict['storage']
             ephemeral_storage_percent = ephemeral_storage['percent']
             ephemeral_storage_number = ephemeral_storage['number']
-            if int(memory_percent)+6 <= 90:
+            if int(memory_percent) + 6 <= 90:
                 if_delete = np.array([0])
                 break
 
