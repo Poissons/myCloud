@@ -19,12 +19,12 @@ def prepare_data(path):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    data = prepare_data(r'./10_21_6/dqn/loss_hist.csv')
+    data = prepare_data(r'./poisson/10_21_6/dqn/loss_hist.csv')
     plt.title('Loss')
 
     sns.lineplot(data=data['loss'], label="loss")
 
     plt.xlim(0, len(data['loss']) - 1)
 
-    plt.savefig('./10_21_6/dqn/loss.png')
+    plt.savefig('./poisson/10_21_6/dqn/loss.png')
     plt.show()
