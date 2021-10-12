@@ -19,8 +19,8 @@ def is_update(y_total):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    greedy_data = pd.read_csv(r'./10_21_6/greedy/collect_compute.csv', usecols=[3])
-    dqn_data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', usecols=[3])
+    greedy_data = pd.read_csv(r'./poisson/10_21_6/greedy/collect_compute.csv', usecols=[3])
+    dqn_data = pd.read_csv(r'./poisson/10_21_6/dqn/collect_compute.csv', usecols=[3])
 
     plt.title('tasks execution situation')
     plt.ylabel('percent')
@@ -31,5 +31,5 @@ if __name__ == "__main__":
     plt.xlim(0, len(greedy_data['success_percent']) - 1)
     plt.ylim(0, 1)
 
-    plt.savefig('./10_21_6/collect.png')
+    plt.savefig('./poisson/10_21_6/collect.png')
     plt.show()
