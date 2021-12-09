@@ -124,7 +124,7 @@ def run(command, keyword):
     return result
 
 
-def run_req(master_name, req, trans_from_center_to_cloud):
+def run_req(master_name, offload_epoch_index, req, trans_from_center_to_cloud):
     execute_start_time = time.time()
     pod_list = check_pod('service')
     pod_index = offload(pod_list)
@@ -134,17 +134,23 @@ def run_req(master_name, req, trans_from_center_to_cloud):
         current_pod = pod_list[pod_index]
     print('开始任务执行.')
     val1 = run(f'curl http://{current_pod.ip}:3100/predict -X POST -d observation={req[0]}', 'Time:')
+    result_return_to_cloud = []
+    result_return_to_cloud[0] = offload_epoch_index
 
     mission = {'success': 0, 'failure': 0, 'stuck': -1}
     detail_mission = {'name': master_name, 'type': req[0], 'success': 0, 'failure': 0}
 
     execute_total_time = time.time() - execute_start_time + 2 * trans_from_center_to_cloud
+    result_return_to_cloud[1] = execute_total_time
+
     if execute_total_time <= req[3]:
         mission['success'] += 1
         detail_mission['success'] += 1
+        result_return_to_cloud[2] = 1
     else:
         mission['failure'] += 1
         detail_mission['failure'] += 1
+        result_return_to_cloud[2] = 0
 
     print(mission)
     print(detail_mission)
@@ -159,7 +165,7 @@ def run_req(master_name, req, trans_from_center_to_cloud):
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((EDGE_IP, EDGE_MASTER_RECEIVE_RESULT_PORT))
-    send_task_json(client, val1)
+    send_task_json(client, result_return_to_cloud)
     client.close()
 
 
@@ -176,14 +182,15 @@ def receive_request_from_edge(server):
             req = conn.recv(task_len)
             req = json.loads(req.decode('utf-8'))
             master_name = req[0]
-            req = req[1]
-            print('已接受到' + str(req[0]) + '号服务请求，开始执行.')
+            offload_epoch_index = req[1]
+            req = req[2]
+            print('已接受到' + str(req[0]) + '号服务请求，offload编号为' + offload_epoch_index + '开始执行.')
 
             arrive_from_center_to_cloud = time.time()
             trans_from_center_to_cloud = arrive_from_center_to_cloud - req[4]
             # 此处直接使用贪心即可
             # 不确定这里到底是不是get
-            pool.apply_async(run_req, (master_name, req, trans_from_center_to_cloud))
+            pool.apply_async(run_req, (master_name, offload_epoch_index, req, trans_from_center_to_cloud))
 
 
 def execute():
