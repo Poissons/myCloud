@@ -21,18 +21,18 @@ def prepare_data(path):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    dqn_path = r'./poisson/10_21_6/dqn/reward_hist.csv'
+    dqn_path = r'./poisson/10_21_6_offload/dqn_2/reward_hist.csv'
     dqn_data = prepare_data(dqn_path)
-    greedy_path = r'./poisson/10_21_6/greedy/reward_hist.csv'
+    greedy_path = r'./poisson/10_21_6_offload/dqn_0/reward_hist.csv'
     greedy_data = prepare_data(greedy_path)
 
     plt.title('reward')
     plt.ylabel('percent')
 
-    sns.lineplot(data=dqn_data['reward_percent'], label="dqn")
-    sns.lineplot(data=greedy_data['reward_percent'], label="greedy")
+    sns.lineplot(data=dqn_data['reward_percent'], label="dqn_2")
+    sns.lineplot(data=greedy_data['reward_percent'], label="dqn_0")
 
     plt.xlim(0, len(greedy_data['reward_percent']) - 1)
 
-    plt.savefig('./poisson/10_21_6/reward.png')
+    plt.savefig('./poisson/10_21_6_offload/reward.png')
     plt.show()

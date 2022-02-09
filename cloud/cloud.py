@@ -152,6 +152,8 @@ def run_req(master_name, offload_epoch_index, req, trans_from_center_to_cloud):
         detail_mission['failure'] += 1
         result_return_to_cloud[2] = 0
 
+    result_return_to_cloud[3] = req[0]
+
     print(mission)
     print(detail_mission)
     client1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -184,7 +186,7 @@ def receive_request_from_edge(server):
             master_name = req[0]
             offload_epoch_index = req[1]
             req = req[2]
-            print('已接受到' + str(req[0]) + '号服务请求，offload编号为' + offload_epoch_index + '开始执行.')
+            print('已接受到' + str(req[0]) + '号服务请求，offload编号为' + str(offload_epoch_index) + '开始执行.')
 
             arrive_from_center_to_cloud = time.time()
             trans_from_center_to_cloud = arrive_from_center_to_cloud - req[4]
