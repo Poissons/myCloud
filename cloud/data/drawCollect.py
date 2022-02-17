@@ -19,7 +19,7 @@ def is_update(y_total):
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimHei']
-    data = pd.read_csv(r'./10_21_6/dqn/collect_compute.csv', usecols=[3, 4, 5])
+    data = pd.read_csv(r'./no_offload/10_21_6/dqn/collect_computeha.csv', usecols=[3, 4])
     # data = pd.read_csv(r'./poisson/10_21_6/greedy/collect_compute.csv', usecols=[3, 4, 5])
 
     plt.title('tasks execution situation')
@@ -27,11 +27,10 @@ if __name__ == "__main__":
 
     sns.lineplot(data=data['success_percent'], label="success")
     sns.lineplot(data=data['failure_percent'], label="failure")
-    sns.lineplot(data=data['stuck_percent'], label="stuck")
 
     plt.xlim(0, len(data['success_percent']) - 1)
     plt.ylim(0, 1)
-    plt.savefig('./10_21_6/dqn/collect.png')
+    plt.savefig('./no_offload/10_21_6/dqn/collectha.png')
     # plt.savefig('./poisson/10_21_6/greedy/collect.png')
 
     plt.show()
