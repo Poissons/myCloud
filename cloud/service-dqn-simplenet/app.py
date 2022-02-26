@@ -247,14 +247,14 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
         success[int(key) - 1] = the_dict['success']
         failure[int(key) - 1] = the_dict['failure']
 
-    total_task_sum = np.sum(success) + np.sum(failure)
-
     for key1, value1 in param2.items():
         for key2, value2 in value1.items():
             service[int(key2) - 1] += value2
 
     for key, the_dict in param3.items():
         stuck[int(key) - 1] = the_dict['stuck']
+
+    total_task_sum = np.sum(success) + np.sum(failure) + np.sum(stuck)
 
     for key, the_dict in param4.items():
         cpu = the_dict['cpu']
@@ -266,7 +266,7 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
         ephemeral_storage = the_dict['storage']
         ephemeral_storage_percent = ephemeral_storage['percent']
         ephemeral_storage_number = ephemeral_storage['number']
-        if int(memory_percent) + 6 <= 90:
+        if int(memory_percent) + 23 <= 90:
             if_delete = np.array([0])
             break
 
@@ -340,7 +340,7 @@ def q_learning_placement(master_name, update_interval, tasks_execute_situation_o
                 ephemeral_storage = the_dict['storage']
                 ephemeral_storage_percent = ephemeral_storage['percent']
                 ephemeral_storage_number = ephemeral_storage['number']
-                if int(memory_percent) + 6 <= 90:
+                if int(memory_percent) + 23 <= 90:
                     if_delete = np.array([0])
                     break
 

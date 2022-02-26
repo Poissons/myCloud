@@ -153,6 +153,7 @@ def run_req(master_name, offload_epoch_index, req, trans_from_center_to_cloud):
         result_return_to_cloud[2] = 0
 
     result_return_to_cloud[3] = req[0]
+    result_return_to_cloud[4] = req[3]
 
     print(mission)
     print(detail_mission)
@@ -188,8 +189,8 @@ def receive_request_from_edge(server):
             req = req[2]
             print('已接受到' + str(req[0]) + '号服务请求，offload编号为' + str(offload_epoch_index) + '开始执行.')
 
-            arrive_from_center_to_cloud = time.time()
-            trans_from_center_to_cloud = arrive_from_center_to_cloud - req[4]
+            # 可以改时间
+            trans_from_center_to_cloud = 165
             # 此处直接使用贪心即可
             # 不确定这里到底是不是get
             pool.apply_async(run_req, (master_name, offload_epoch_index, req, trans_from_center_to_cloud))

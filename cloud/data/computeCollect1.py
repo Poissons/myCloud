@@ -1,7 +1,7 @@
 import pandas as pd
 
 if __name__ == "__main__":
-    data = pd.read_csv(r'./offload/no_possion/10_21_6/random/collect.csv', header=None, names=['success', 'failure', 'stuck'])
+    data = pd.read_csv(r'./offload/poisson/10_15_165_offload/random/collect.csv', header=None, names=['success', 'failure', 'stuck'])
     # data = pd.read_csv(r'./poisson/10_21_6/greedy/collect.csv', header=None, names=['success', 'failure', 'stuck'])
 
     success_percent = []
@@ -17,11 +17,11 @@ if __name__ == "__main__":
             failure_percent.append(0)
             stuck_percent.append(0)
         else:
-            success_percent.append(round(success / (success + failure), 4))
-            failure_percent.append(round(failure / (success + failure), 4))
-            stuck_percent.append(round(stuck / (success + failure), 4))
+            success_percent.append(round(success / (success + failure+stuck), 4))
+            failure_percent.append(round(failure / (success + failure+stuck), 4))
+            stuck_percent.append(round(stuck / (success + failure+stuck), 4))
     data['success_percent'] = success_percent
     data['failure_percent'] = failure_percent
     data['stuck_percent'] = stuck_percent
 
-    data.to_csv('./offload/no_possion/10_21_6/random/collect_compute.csv', index=False)
+    data.to_csv('./offload/poisson/10_15_165_offload/random/collect_computeha.csv', index=False)
